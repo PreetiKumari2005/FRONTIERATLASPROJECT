@@ -1,0 +1,28 @@
+import { Context } from 'hono';
+import * as taskService from '../services/task.service.js';
+
+export const getTasks = async (c: Context) => {
+  const prisma = c.var.prisma;
+  const limit = Number(c.req.query('limit')) || 50;
+  const skip = Number(c.req.query('skip')) || 0;
+
+  try {
+    const tasks = await taskService.getTasks(prisma, limit, skip);
+    return c.json({ status: "success", count: tasks.length, data: tasks }, 200);
+  } catch (error: any) {
+    return c.json({ status: "error", detail: error.message }, 500);
+  }
+};
+
+export const getTaskBySlug = async (c: Context) => {
+  const prisma = c.var.prisma;
+  const slug = c.req.param('slug') as string;
+
+  try {
+    const task = await taskService.getTaskBySlug(prisma, slug);
+    if (!task) return c.json({ status: "error", message: "Task not found" }, 404);
+    return c.json({ status: "success", data: task }, 200);
+  } catch (error: any) {
+    return c.json({ status: "error", detail: error.message }, 500);
+  }
+};

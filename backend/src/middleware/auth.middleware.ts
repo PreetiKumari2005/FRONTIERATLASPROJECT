@@ -47,7 +47,7 @@ export const authMiddleware: MiddlewareHandler<{
   try {
 
     const payload =
-      verifyAccessToken(accessToken);
+      await verifyAccessToken(accessToken);
 
     c.set("userId", payload.userId);
 
