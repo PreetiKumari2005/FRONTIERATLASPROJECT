@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
 import authRoutes from './routes/auth.routes.js'
 import paperRoutes from './routes/paper.routes.js'
@@ -37,7 +38,8 @@ app.use('*', cors({
 // 2. Per-Request Prisma Client Lifecycle Middleware
 app.use('*', async (c, next) => {
   // Pass the Cloudflare environment variable DIRECTLY to the adapter
-  const adapter = new PrismaNeon({ connectionString: c.env.DATABASE_URL })
+  const pool = new Pool({ connectionString: c.env.DATABASE_URL })
+  const adapter = new PrismaNeon(pool)
   const prisma = new PrismaClient({ adapter })
   
   // Attach the client strictly typed
