@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PAPERS, Paper } from "./PapersData";
 import Link from "next/link";
 
@@ -301,12 +301,50 @@ function PaperCard(p: Paper) {
 
 export default function ResearchHomePage() {
   const [activeTab, setActiveTab] = useState("Today");
+  const [papers, setPapers] = useState<Paper[]>(PAPERS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8788";
+    fetch(`${apiUrl}/api/v1/research-papers`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.data) {
+          const apiPapers = data.data.map((p: any) => ({
+            title: p.title,
+            authors: "Research Team", // Placeholder until backend adds authors relation
+            date: new Date(p.createdAt).toLocaleDateString(),
+            showAuthors: true,
+            description: "View this paper on arXiv.", // Placeholder
+            upvotes: "1.2K",
+            repos: "300",
+            citations: p.citationCount?.toString() || "0",
+            tags: [{ label: "AI", color: "blue" }],
+            methods: [],
+            sotaBenchmarks: [],
+            sotaRank: "",
+            sotaRankLabel: "",
+            sotaExtra: "",
+            thumbUrl: "/img1.png", // Placeholder
+            arxivUrl: p.paperUrl,
+          }));
+          setPapers(apiPapers);
+        }
+      })
+      .catch((err) => console.error("Error fetching papers:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen bg-white font-sans">
       <div className="max-w-[1200px] mx-auto md:px-14 pb-8 lg:pb-12 px-4">
         <HeroSection active={activeTab} setActive={setActiveTab} />
         <div className="flex flex-col gap-3">
-          {PAPERS.map(p => <PaperCard key={p.title} {...p} />)}
+          {loading ? (
+            <div className="text-center py-10 text-gray-500">Loading papers from API...</div>
+          ) : (
+            papers.map((p) => <PaperCard key={p.title} {...p} />)
+          )}
         </div>
       </div>
     </div>

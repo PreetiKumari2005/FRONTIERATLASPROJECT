@@ -10,8 +10,8 @@
     "types": ["node"]
   },
   "include": [
-  "src/**/*",
-  "scripts/**/*",
-  "prisma.config.ts"
-]
+    "src/**/*",
+    "scripts/**/*",
+    "prisma.config.ts"
+  ]
 }

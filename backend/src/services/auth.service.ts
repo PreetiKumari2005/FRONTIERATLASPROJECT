@@ -50,10 +50,10 @@ const createTokenPair = async (
   userId: string
 ) => {
   const accessToken =
-    generateAccessToken(userId);
+    await generateAccessToken(userId);
 
   const refreshToken =
-    generateRefreshToken(userId);
+    await generateRefreshToken(userId);
 
   await prisma.refreshToken.create({
     data: {
@@ -239,7 +239,7 @@ export const refreshUserToken = async (
   try {
 
     payload =
-      verifyRefreshToken(refreshToken);
+      await verifyRefreshToken(refreshToken);
 
   } catch {
 
@@ -322,10 +322,10 @@ export const refreshUserToken = async (
   }
 
   const accessToken =
-    generateAccessToken(user.id);
+    await generateAccessToken(user.id);
 
   const newRefreshToken =
-    generateRefreshToken(user.id);
+    await generateRefreshToken(user.id);
 
   await prisma.$transaction([
 
