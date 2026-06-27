@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import authRoutes from './routes/auth.routes'
 
 // 1. Define BOTH Environment Bindings and Context Variables
 type Env = {
@@ -107,3 +108,4 @@ app.get('/api/v1/research-papers', async (c) => {
 })
 
 export default app
+app.route("/api/v1/auth", authRoutes);
