@@ -2,8 +2,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { env } from 'hono/adapter'
 import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
 import authRoutes from './routes/auth.routes.js'
 import paperRoutes from './routes/paper.routes.js'
@@ -51,7 +51,7 @@ app.use('*', async (c, next) => {
   
   // Initialize Prisma strictly on a per-request basis for Cloudflare Workers
   const pool = new Pool({ connectionString: cleanUrl })
-  const adapter = new PrismaPg(pool)
+  const adapter = new PrismaNeon(pool)
   const prisma = new PrismaClient({ adapter })
   
   c.set('prisma', prisma)
