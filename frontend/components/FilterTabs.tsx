@@ -1,0 +1,37 @@
+"use client";
+
+import { useState } from "react";
+import { filterTabs } from "@/data/mockData";
+import { cn } from "@/lib/utils";
+
+interface FilterTabsProps {
+  onSelect?: (tab: string) => void;
+}
+
+export default function FilterTabs({ onSelect }: FilterTabsProps) {
+  const [activeTab, setActiveTab] = useState("Today");
+
+  const handleSelect = (tab: string) => {
+    setActiveTab(tab);
+    onSelect?.(tab);
+  };
+
+  return (
+    <div className="flex items-center border-b border-gray-200 mb-0 -mx-4 px-4">
+      {filterTabs.map((tab) => (
+        <button
+          key={tab}
+          onClick={() => handleSelect(tab)}
+          className={cn(
+            "px-3 py-2.5 text-[13px] font-medium cursor-pointer transition-colors border-b-2 -mb-px",
+            tab === activeTab
+              ? "text-[#7c3aed] border-[#7c3aed]"
+              : "text-gray-500 border-transparent hover:text-gray-800"
+          )}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  );
+}
