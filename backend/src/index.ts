@@ -3,7 +3,7 @@ import { cors } from 'hono/cors'
 import { env } from 'hono/adapter'
 import { PrismaClient } from '@prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
-import { Pool, neonConfig } from '@neondatabase/serverless'
+import { neonConfig } from '@neondatabase/serverless'
 
 import authRoutes from './routes/auth.routes.js'
 import paperRoutes from './routes/paper.routes.js'
@@ -43,27 +43,16 @@ app.use('*', async (c, next) => {
   // Strip quotes if they were included in the .dev.vars file
   const cleanUrl = DATABASE_URL ? DATABASE_URL.replace(/^"|"$/g, '') : '';
   
-  // Workaround for 'nodejs_compat' mode in Cloudflare Workers:
-  // The pg/neon library checks process.env if it exists, which it does in compat mode but it's empty!
-  if (typeof process !== 'undefined' && process.env) {
-    process.env.DATABASE_URL = cleanUrl;
-  }
-  
-  // Set Cloudflare WebSocket constructor for Neon Serverless
+  // Configure WebSocket for Cloudflare Workers environment
   neonConfig.webSocketConstructor = WebSocket;
   
-  // Initialize Prisma strictly on a per-request basis for Cloudflare Workers
-  const pool = new Pool({ connectionString: cleanUrl })
-  const adapter = new PrismaNeon(pool)
+  // PrismaNeon v7.8 takes a PoolConfig object — it creates the Pool internally
+  const adapter = new PrismaNeon({ connectionString: cleanUrl })
   const prisma = new PrismaClient({ adapter })
   
   c.set('prisma', prisma)
   
   await next()
-  
-  // IMPORTANT: We explicitly do NOT call await prisma.$disconnect() here.
-  // In the Cloudflare Edge runtime with Neon, calling disconnect() attempts to gracefully 
-  // close WebSockets which causes the worker runtime to hang and crash with a 500 error.
 })
 
 // Register Routes
