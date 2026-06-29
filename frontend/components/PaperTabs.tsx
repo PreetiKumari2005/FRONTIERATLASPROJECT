@@ -9,7 +9,7 @@ export default function PaperTabs() {
 
   return (
     <div className="border-b border-[#E5E5E0] mb-3">
-      <div className="flex gap-1">
+      <div className="flex gap-1 overflow-x-auto hide-scroll">
         {TABS.map((tab) => (
           <button
             key={tab}

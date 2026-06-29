@@ -31,7 +31,7 @@ function NavItem({
     <div
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-3 py-[4px] mx-2 cursor-pointer transition-colors text-[11px] font-medium",
+        "flex items-center gap-2 px-3 py-2 xl:py-[4px] mx-2 cursor-pointer transition-colors text-[11px] font-medium",
         isActive
           ? "text-[#F55036] font-bold"
           : "text-[#555555] hover:text-[#F55036]"
@@ -82,50 +82,64 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-[240px] shrink-0 bg-[#F8F7F2] border-r border-[#E5E5E0] overflow-hidden py-2 pl-6">
-      <SectionLabel>DISCOVER</SectionLabel>
-      {discover.map((item) => (
-        <NavItem
-          key={item.label}
-          icon={item.icon}
-          label={item.label}
-          isActive={activeItem === item.label}
-          onClick={() => setActiveItem(item.label)}
-        />
-      ))}
+    <aside className="flex flex-col w-full bg-transparent overflow-hidden">
+      
+      {/* Non-scrollable Nav Area */}
+      <div className="flex flex-col gap-2">
+        
+        <div className="flex flex-col">
+          <SectionLabel>DISCOVER</SectionLabel>
+          {discover.map((item) => (
+            <NavItem
+              key={item.label}
+              icon={item.icon}
+              label={item.label}
+              isActive={activeItem === item.label}
+              onClick={() => setActiveItem(item.label)}
+            />
+          ))}
+        </div>
 
-      <SectionLabel>TASKS</SectionLabel>
-      {tasks.map((item) => (
-        <NavItem
-          key={item.label}
-          icon={item.icon}
-          label={item.label}
-          isActive={activeItem === item.label}
-          onClick={() => setActiveItem(item.label)}
-        />
-      ))}
+        <div className="flex flex-col">
+          <SectionLabel>TASKS</SectionLabel>
+          {tasks.map((item) => (
+            <NavItem
+              key={item.label}
+              icon={item.icon}
+              label={item.label}
+              isActive={activeItem === item.label}
+              onClick={() => setActiveItem(item.label)}
+            />
+          ))}
+        </div>
 
-      <SectionLabel>METHODS</SectionLabel>
-      {methods.map((item) => (
-        <NavItem
-          key={item.label}
-          icon={item.icon}
-          label={item.label}
-          isActive={activeItem === item.label}
-          onClick={() => setActiveItem(item.label)}
-        />
-      ))}
+        <div className="flex flex-col">
+          <SectionLabel>METHODS</SectionLabel>
+          {methods.map((item) => (
+            <NavItem
+              key={item.label}
+              icon={item.icon}
+              label={item.label}
+              isActive={activeItem === item.label}
+              onClick={() => setActiveItem(item.label)}
+            />
+          ))}
+        </div>
 
-      <SectionLabel>GENERATION</SectionLabel>
-      {generation.map((item) => (
-        <NavItem
-          key={item.label}
-          icon={item.icon}
-          label={item.label}
-          isActive={activeItem === item.label}
-          onClick={() => setActiveItem(item.label)}
-        />
-      ))}
+        <div className="flex flex-col">
+          <SectionLabel>GENERATION</SectionLabel>
+          {generation.map((item) => (
+            <NavItem
+              key={item.label}
+              icon={item.icon}
+              label={item.label}
+              isActive={activeItem === item.label}
+              onClick={() => setActiveItem(item.label)}
+            />
+          ))}
+        </div>
+
+      </div>
     </aside>
   );
 }

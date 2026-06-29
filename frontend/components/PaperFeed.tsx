@@ -31,10 +31,10 @@ function Pill({ label, colorKey }: { label: string; colorKey: string }) {
 
   return (
     <span
-      className={`h-[24px] inline-flex items-center px-2 rounded-[4px] text-[11px] font-mono cursor-pointer hover:opacity-80 transition-opacity ${c.bg} ${c.text} ${c.border || ""}`}
+      className={`h-[28px] xl:h-[24px] inline-flex items-center px-3 xl:px-2 rounded-[4px] text-[11px] font-mono cursor-pointer hover:opacity-80 transition-opacity ${c.bg} ${c.text} ${c.border || ""} whitespace-nowrap`}
     >
       {!isGray && (
-        <span className={`w-1.5 h-1.5 rounded-full mr-2 ${c.dot}`} />
+        <span className={`w-1.5 h-1.5 rounded-full mr-2 shrink-0 ${c.dot}`} />
       )}
       {label}
     </span>
@@ -49,7 +49,7 @@ function SotaDisplay({ sota }: { sota: string }) {
   const segments = sota.split(" • ");
 
   return (
-    <div className="mb-[12px] text-[11.5px] tracking-tight whitespace-nowrap flex items-center">
+    <div className="mb-[12px] text-[11.5px] tracking-tight flex flex-nowrap items-center gap-x-2 gap-y-1 overflow-hidden whitespace-nowrap w-full">
       {segments.map((segment, idx) => {
         const isSota = segment.startsWith("SOTA on ");
         const isOn = segment.includes(" on ");
@@ -95,13 +95,13 @@ function SotaDisplay({ sota }: { sota: string }) {
 /* ─── Thumbnail ──────────────────────────────────────────────────────────── */
 function PaperThumbnail({ title, thumbnail }: { title: string; thumbnail: string }) {
   return (
-    <div className="w-[170px] h-[240px] shrink-0 border border-[#E5E5E0] rounded-none bg-white overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.07)] relative">
+    <div className="w-full xl:w-[170px] h-[180px] sm:h-[220px] xl:h-[240px] shrink-0 border border-[#E5E5E0] rounded-md xl:rounded-none bg-white overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.07)] relative">
       <Image
         src={thumbnail}
         alt={title}
         fill
         className="object-cover object-top"
-        sizes="170px"
+        sizes="(max-width: 1280px) 100vw, 170px"
       />
     </div>
   );
@@ -132,27 +132,27 @@ function Metric({
   );
 }
 
-/* ─── Paper card ─────────────────────────────────────────────────────────── */
+/* ─── Paper Card ─────────────────────────────────────────────────────────── */
 function PaperCard({ paper }: { paper: (typeof papers)[0] }) {
   // Parse upvotes string to float for stars/hr, e.g. "11.2K" -> "11.2"
   const upvotesNum = parseFloat(paper.upvotes) || 38.7;
 
   return (
-    <div className="group flex gap-6 py-6 px-6 -mx-6 border-b border-[#E5E5E0] bg-transparent min-w-0 cursor-pointer hover:bg-white hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-200 rounded-none">
+    <div className="group flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 xl:-mx-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent min-w-0 cursor-pointer hover:shadow-md xl:hover:bg-white xl:hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-200 rounded-xl xl:rounded-none h-full">
       {/* LEFT — PDF thumbnail */}
-      <div className="flex flex-col justify-center shrink-0">
+      <div className="flex flex-col justify-center shrink-0 w-full xl:w-auto">
         <PaperThumbnail title={paper.title} thumbnail={paper.thumbnail} />
       </div>
 
       {/* RIGHT — Content */}
-      <div className="flex-1 min-w-0 flex flex-col pr-8">
+      <div className="flex-1 min-w-0 flex flex-col xl:pr-8">
         {/* Title */}
-        <h3 className="text-[20px] font-serif font-medium text-[#2D2D2D] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors line-clamp-2">
+        <h3 className="text-[18px] xl:text-[20px] font-serif font-medium text-[#2D2D2D] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-2">
           {paper.title}
         </h3>
 
         {/* Authors + date */}
-        <p className="text-[13px] font-normal text-[#555555] mb-3">
+        <p className="text-[13px] font-normal text-[#555555] mb-3 truncate">
           {paper.authors}
           <span className="mx-2 text-[#DCDCD7]">·</span>
           {paper.date}
@@ -164,10 +164,12 @@ function PaperCard({ paper }: { paper: (typeof papers)[0] }) {
         </p>
 
         {/* Benchmark / SOTA (Row 1) */}
-        <SotaDisplay sota={paper.sota} />
+        <div className="w-full overflow-hidden">
+          <SotaDisplay sota={paper.sota} />
+        </div>
 
         {/* Tasks (Row 2) */}
-        <div className="flex items-center gap-2 mb-2 whitespace-nowrap overflow-hidden">
+        <div className="flex flex-nowrap items-center gap-2 mb-2 w-full overflow-hidden">
           {paper.tags.map((t) => {
             const colorKey = getTagColor(t);
             return <Pill key={t} label={t} colorKey={colorKey} />;
@@ -175,7 +177,7 @@ function PaperCard({ paper }: { paper: (typeof papers)[0] }) {
         </div>
 
         {/* Methods (Row 3) */}
-        <div className="flex items-center gap-2 whitespace-nowrap overflow-hidden">
+        <div className="flex flex-nowrap items-center gap-2 w-full overflow-hidden">
           {paper.additionalTags?.map((t) => {
             const colorKey = getTagColor(t);
             return <Pill key={t} label={t} colorKey={colorKey} />;
@@ -184,11 +186,10 @@ function PaperCard({ paper }: { paper: (typeof papers)[0] }) {
       </div>
 
       {/* RIGHT — Metrics */}
-      <div className="shrink-0 flex items-stretch pl-[24px] pr-[32px] border-l border-[#E5E5E0]">
-        <div className="flex flex-col justify-around items-center w-[64px] py-2">
+      <div className="shrink-0 flex items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] mt-auto xl:mt-0 pt-4 xl:pt-0 w-full xl:w-auto">
+        <div className="flex flex-row xl:flex-col justify-around xl:justify-around items-center w-full xl:w-[64px] xl:py-2 gap-2 xl:gap-0">
           <Metric value={`↑${upvotesNum}`} label="Stars / Hr">
-            {/* Minimal optional icon if needed, omitted to match reference exactly if requested, 
-                but keeping the arrow in value is matching "↑38.7" */}
+            {/* Minimal optional icon if needed */}
           </Metric>
 
           <Metric value={paper.repo} label="Repo">
@@ -207,7 +208,7 @@ function PaperCard({ paper }: { paper: (typeof papers)[0] }) {
 /* ─── List ───────────────────────────────────────────────────────────────── */
 export default function PaperList() {
   return (
-    <div className="pb-12 bg-transparent">
+    <div className="pb-12 bg-transparent grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-col gap-6 xl:gap-0">
       {papers.map((paper) => (
         <PaperCard key={paper.id} paper={paper} />
       ))}

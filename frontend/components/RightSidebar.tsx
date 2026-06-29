@@ -73,8 +73,8 @@ export default function RightSidebar() {
     : trendingTopics.filter(topic => topic.platform === activeTab);
 
   return (
-    <aside className="w-[320px] shrink-0 flex flex-col justify-start pr-4 mr-2 pt-[48px] pb-12">
-      <div className="bg-white border border-[#E5E5E0] shadow-[0_4px_24px_rgba(0,0,0,0.03)] p-5 flex flex-col rounded-none">
+    <aside className="flex flex-col w-full shrink-0 justify-start pb-12">
+      <div className="p-0 xl:p-2 flex flex-col">
         
         {/* Header */}
         <div className="flex items-center gap-2 mb-4">

@@ -17,7 +17,7 @@ export default function FilterTabs({ onSelect }: FilterTabsProps) {
   };
 
   return (
-    <div className="flex items-center border-b border-gray-200 mb-0 -mx-4 px-4">
+    <div className="flex items-center border-b border-gray-200 mb-0 -mx-4 px-4 overflow-x-auto hide-scroll">
       {filterTabs.map((tab) => (
         <button
           key={tab}
