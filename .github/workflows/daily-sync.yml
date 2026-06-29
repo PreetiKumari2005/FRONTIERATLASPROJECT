@@ -33,6 +33,8 @@ jobs:
         run: npm ci
       - name: Generate Prisma Client
         working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
       - name: Run daily sync
         working-directory: backend
