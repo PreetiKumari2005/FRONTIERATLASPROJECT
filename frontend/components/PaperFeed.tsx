@@ -142,16 +142,6 @@ function PaperCard({ paper }: { paper: Paper }) {
   // Parse upvotes string to float for stars/hr, e.g. "11.2K" -> "11.2"
   const upvotesNum = parseFloat(paper.upvotes) || 38.7;
 
-  // Safely parse authors
-  let displayAuthors = "Unknown Authors";
-  if (typeof paper.authors === 'string') {
-    displayAuthors = paper.authors;
-  } else if (Array.isArray(paper.authors)) {
-    displayAuthors = paper.authors.map(a => typeof a === 'object' ? a.name : a).join(", ");
-  } else if (paper.authors && typeof paper.authors === 'object') {
-    displayAuthors = (paper.authors as any).name || "Unknown Author";
-  }
-
   return (
     <div className="group flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 xl:-mx-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent min-w-0 cursor-pointer hover:shadow-md xl:hover:bg-white xl:hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-200 rounded-xl xl:rounded-none h-full">
       {/* LEFT — PDF thumbnail */}
@@ -168,7 +158,7 @@ function PaperCard({ paper }: { paper: Paper }) {
 
         {/* Authors + date */}
         <p className="text-[13px] font-normal text-[#555555] mb-3 truncate">
-          {displayAuthors}
+          {paper.authors}
           <span className="mx-2 text-[#DCDCD7]">·</span>
           {paper.date}
         </p>
@@ -234,6 +224,7 @@ export default function PaperList() {
         setPapers(data);
         setError(null);
       } catch (err) {
+        console.error(err);
         setError('Failed to load papers. Please try again later.');
       } finally {
         setLoading(false);

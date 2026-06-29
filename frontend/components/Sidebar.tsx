@@ -78,6 +78,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
         setFetchedTasks(mappedTasks);
         setTasksError(null);
       } catch (err) {
+        console.error(err);
         setTasksError("Failed to load tasks. Please try again later.");
       } finally {
         setTasksLoading(false);

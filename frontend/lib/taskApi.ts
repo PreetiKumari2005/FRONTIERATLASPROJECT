@@ -15,16 +15,20 @@ export interface TasksResponse {
 
 export async function getTasks(): Promise<TaskItem[]> {
   try {
-    const response = await fetchApi<TasksResponse>('/api/v1/tasks');
+    const response = await fetchApi<Record<string, unknown>>('/api/v1/tasks');
     if (Array.isArray(response)) {
-      return response;
+      return response as TaskItem[];
     }
-    if (response && response.data) {
-      if (Array.isArray(response.data)) {
-        return response.data;
+    if (response && 'data' in response) {
+      const data = response.data;
+      if (Array.isArray(data)) {
+        return data as TaskItem[];
       }
-      if (response.data.tasks && Array.isArray(response.data.tasks)) {
-        return response.data.tasks;
+      if (data && typeof data === 'object' && 'tasks' in data) {
+        const tasks = (data as Record<string, unknown>).tasks;
+        if (Array.isArray(tasks)) {
+          return tasks as TaskItem[];
+        }
       }
     }
     console.warn('Unexpected API response format for tasks:', response);

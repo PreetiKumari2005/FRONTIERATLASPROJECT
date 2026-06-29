@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import Image from "next/image";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,8 +44,8 @@ export default function Navbar() {
               <line x1="4" y1="18" x2="20" y2="18"/>
             </svg>
           </button>
-          <div className="flex items-center cursor-pointer">
-            <img src="/logo.png" alt="Frontier Atlas" className="h-8 lg:h-9 w-auto object-contain" />
+          <div className="flex items-center cursor-pointer relative w-[140px] lg:w-[160px] h-8 lg:h-9">
+            <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-left" sizes="(max-width: 1024px) 140px, 160px" />
           </div>
         </div>
 
@@ -88,7 +89,9 @@ export default function Navbar() {
         aria-label="Mobile navigation"
       >
         <div className="h-[52px] border-b border-[#E5E5E0] flex items-center justify-between px-4 shrink-0">
-          <img src="/logo.png" alt="Frontier Atlas" className="h-6 w-auto object-contain" />
+          <div className="relative w-[120px] h-6">
+            <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-left" sizes="120px" />
+          </div>
           <button 
              onClick={closeMenu}
              aria-label="Close menu"

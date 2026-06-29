@@ -1,7 +1,7 @@
 import { fetchApi } from './api';
 
 export interface Paper {
-  id: number;
+  id: string | number;
   title: string;
   thumbnail: string;
   authors: string;
@@ -20,39 +20,39 @@ export interface PapersResponse {
   status: string;
   count: number;
   data: {
-    papers: any[];
+    papers: Record<string, unknown>[];
   };
 }
 
-function mapBackendPaper(raw: any): Paper {
+function mapBackendPaper(raw: Record<string, unknown>): Paper {
   let displayAuthors = "Unknown Authors";
   if (typeof raw.authors === 'string') {
     displayAuthors = raw.authors;
   } else if (Array.isArray(raw.authors)) {
-    displayAuthors = raw.authors.map((a: any) => typeof a === 'object' ? a.name : a).join(", ");
+    displayAuthors = raw.authors.map((a: unknown) => typeof a === 'object' && a !== null && 'name' in a ? (a as {name: string}).name : String(a)).join(", ");
   } else if (raw.authors && typeof raw.authors === 'object') {
-    displayAuthors = raw.authors.name || "Unknown Author";
+    displayAuthors = 'name' in raw.authors ? String((raw.authors as {name: unknown}).name) : "Unknown Author";
   }
 
   let formattedDate = "Unknown Date";
   if (raw.publicationDate) {
-    formattedDate = new Date(raw.publicationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    formattedDate = new Date(String(raw.publicationDate)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   return {
-    id: raw.id,
-    title: raw.title || "Untitled Paper",
-    thumbnail: raw.thumbnail || "",
+    id: Number(raw.id) || String(raw.id),
+    title: String(raw.title || "Untitled Paper"),
+    thumbnail: String(raw.thumbnail || ""),
     authors: displayAuthors,
     date: formattedDate,
-    description: raw.abstract || "",
-    sota: (raw.sotaClaims || []).join(" • "),
-    tags: raw.tasks || [],
-    additionalTags: raw.methods || [],
-    upvotes: (raw.githubStars || 0).toString(),
-    repo: (raw.githubForks || 0).toString(),
-    citations: raw.citations || 0,
-    conference: raw.conference || "",
+    description: String(raw.abstract || ""),
+    sota: Array.isArray(raw.sotaClaims) ? raw.sotaClaims.join(" • ") : "",
+    tags: Array.isArray(raw.tasks) ? raw.tasks.map(String) : [],
+    additionalTags: Array.isArray(raw.methods) ? raw.methods.map(String) : [],
+    upvotes: String(raw.githubStars || 0),
+    repo: String(raw.githubForks || 0),
+    citations: Number(raw.citations || 0),
+    conference: String(raw.conference || ""),
   };
 }
 
@@ -74,7 +74,7 @@ export async function searchPapers(query: string): Promise<Paper[]> {
     const response = await fetchApi<PapersResponse>(`/api/v1/research-papers?search=${encodeURIComponent(query)}`);
     return response.data.papers.map(mapBackendPaper);
   } catch (error) {
-    console.warn('Backend search unavailable, falling back to client-side filtering');
+    console.warn('Backend search unavailable, falling back to client-side filtering', error);
     // Fallback: fetch all and filter locally
     try {
       const allPapers = await getPapers();
