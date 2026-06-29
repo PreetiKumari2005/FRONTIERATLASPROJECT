@@ -45,7 +45,7 @@ function NavItem({
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
   const [activeItem, setActiveItem] = useState("Trending Papers");
 
   const discover = [
@@ -95,7 +95,10 @@ export default function Sidebar() {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => setActiveItem(item.label)}
+              onClick={() => {
+                setActiveItem(item.label);
+                onItemClick?.();
+              }}
             />
           ))}
         </div>
@@ -108,7 +111,10 @@ export default function Sidebar() {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => setActiveItem(item.label)}
+              onClick={() => {
+                setActiveItem(item.label);
+                onItemClick?.();
+              }}
             />
           ))}
         </div>
@@ -121,7 +127,10 @@ export default function Sidebar() {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => setActiveItem(item.label)}
+              onClick={() => {
+                setActiveItem(item.label);
+                onItemClick?.();
+              }}
             />
           ))}
         </div>
@@ -134,7 +143,10 @@ export default function Sidebar() {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => setActiveItem(item.label)}
+              onClick={() => {
+                setActiveItem(item.label);
+                onItemClick?.();
+              }}
             />
           ))}
         </div>
