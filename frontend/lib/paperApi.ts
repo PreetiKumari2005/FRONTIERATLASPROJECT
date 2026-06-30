@@ -27,6 +27,18 @@ export interface PapersResponse {
   };
 }
 
+function extractString(val: unknown): string {
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && val !== null) {
+    const obj = val as Record<string, unknown>;
+    if (obj.name) return String(obj.name);
+    if (obj.task) return String(obj.task);
+    if (obj.method) return String(obj.method);
+    if (obj.label) return String(obj.label);
+  }
+  return String(val);
+}
+
 function mapBackendPaper(raw: Record<string, unknown>): Paper {
   let displayAuthors = "Unknown Authors";
   if (typeof raw.authors === 'string') {
@@ -50,8 +62,8 @@ function mapBackendPaper(raw: Record<string, unknown>): Paper {
     date: formattedDate,
     description: String(raw.abstract || ""),
     sota: Array.isArray(raw.sotaClaims) ? raw.sotaClaims.join(" • ") : "",
-    tags: Array.isArray(raw.tasks) ? raw.tasks.map(String) : [],
-    additionalTags: Array.isArray(raw.methods) ? raw.methods.map(String) : [],
+    tags: Array.isArray(raw.tasks) ? raw.tasks.map(extractString) : [],
+    additionalTags: Array.isArray(raw.methods) ? raw.methods.map(extractString) : [],
     upvotes: String(raw.githubStars || 0),
     repo: String(raw.githubForks || 0),
     citations: Number(raw.citations || 0),
