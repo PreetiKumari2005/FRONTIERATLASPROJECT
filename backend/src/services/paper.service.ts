@@ -14,6 +14,7 @@ const exposeThumbnailUrl = <T extends { thumbnailUrl?: string | null }>(paper: T
   const { thumbnailUrl, ...rest } = paper;
   return {
     ...rest,
+    thumbnailUrl: thumbnailUrl ?? null,
     thumbnail_url: thumbnailUrl ?? null,
   };
 };
@@ -117,6 +118,7 @@ export const getPapers = async (
         githubUrl: true,
         githubStars: true,
         githubForks: true,
+        language: true,
         authors: {
           select: {
             author: {
@@ -192,7 +194,19 @@ export const getPaperBySlug = async (prisma: PrismaClient, slug: string) => {
       authors: { include: { author: true } },
       models: { include: { model: true } },
       datasets: { include: { dataset: true } },
-      tasks: { include: { task: true } }
+      tasks: { include: { task: true } },
+      methods: { include: { method: true } },
+      conferences: { include: { conference: true } },
+      rankings: {
+        include: {
+          benchmark: true
+        }
+      },
+      sotaClaims: {
+        include: {
+          benchmark: true
+        }
+      }
     }
   });
 

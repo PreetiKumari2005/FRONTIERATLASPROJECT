@@ -125,7 +125,11 @@ export const PaperScalarFieldEnum = {
   updatedAt: 'updatedAt',
   githubForks: 'githubForks',
   githubStars: 'githubStars',
-  githubUrl: 'githubUrl'
+  githubUrl: 'githubUrl',
+  isOfficialCode: 'isOfficialCode',
+  hfUpvotes: 'hfUpvotes',
+  trendingScore: 'trendingScore',
+  discoverySource: 'discoverySource'
 } as const
 
 export type PaperScalarFieldEnum = (typeof PaperScalarFieldEnum)[keyof typeof PaperScalarFieldEnum]
