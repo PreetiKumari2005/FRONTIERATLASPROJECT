@@ -10,15 +10,11 @@
     "types": ["node"]
   },
   "include": [
-    "src/**/*",
-    "scripts/daily-sync.ts",
-    "prisma.config.ts"
+    "src/**/*"
   ],
   "exclude": [
-    "scripts/importPaperAuthors.ts",
-    "scripts/importPaperRepositories.ts",
-    "scripts/importAuthors.ts",
-    "scripts/importPapers.ts",
-    "scripts/importRepositories.ts"
+    "node_modules",
+    "scripts/",
+    "src/ingestion/"
   ]
 }
