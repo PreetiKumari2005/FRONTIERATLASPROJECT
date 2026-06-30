@@ -3,7 +3,6 @@ import { useState, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import PaperList from "@/components/PaperFeed";
-import PaperFilters from "@/components/PaperFilters";
 import RightSidebar from "@/components/RightSidebar";
 import HeroSection from "@/components/HeroSection";
 import type { PaperFilters as Filters } from "@/lib/paperApi";
@@ -11,13 +10,6 @@ import type { PaperFilters as Filters } from "@/lib/paperApi";
 export default function Home() {
   const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
   const [filters, setFilters] = useState<Filters>({});
-
-  const handleFilterChange = useCallback((newFilters: Filters) => {
-    setFilters(newFilters);
-    if (newFilters.task) {
-      setSelectedTag(undefined);
-    }
-  }, []);
 
   const handleTagChange = useCallback((tag: string | undefined) => {
     setSelectedTag(tag);
@@ -54,7 +46,6 @@ export default function Home() {
           </div>
 
           <main className="flex-1 min-w-0 max-w-full">
-            <PaperFilters filters={filters} onChange={handleFilterChange} />
             <PaperList filters={filters} />
           </main>
           
