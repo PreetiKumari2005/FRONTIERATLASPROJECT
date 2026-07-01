@@ -1,4 +1,7 @@
 "use client";
+
+export const runtime = "edge";
+
 import { use, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
