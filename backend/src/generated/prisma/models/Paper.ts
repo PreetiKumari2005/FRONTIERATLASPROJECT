@@ -32,6 +32,8 @@ export type PaperAvgAggregateOutputType = {
   pageCount: number | null
   githubForks: number | null
   githubStars: number | null
+  hfUpvotes: number | null
+  trendingScore: number | null
 }
 
 export type PaperSumAggregateOutputType = {
@@ -40,6 +42,8 @@ export type PaperSumAggregateOutputType = {
   pageCount: number | null
   githubForks: number | null
   githubStars: number | null
+  hfUpvotes: number | null
+  trendingScore: number | null
 }
 
 export type PaperMinAggregateOutputType = {
@@ -70,6 +74,10 @@ export type PaperMinAggregateOutputType = {
   githubForks: number | null
   githubStars: number | null
   githubUrl: string | null
+  isOfficialCode: boolean | null
+  hfUpvotes: number | null
+  trendingScore: number | null
+  discoverySource: string | null
 }
 
 export type PaperMaxAggregateOutputType = {
@@ -100,6 +108,10 @@ export type PaperMaxAggregateOutputType = {
   githubForks: number | null
   githubStars: number | null
   githubUrl: string | null
+  isOfficialCode: boolean | null
+  hfUpvotes: number | null
+  trendingScore: number | null
+  discoverySource: string | null
 }
 
 export type PaperCountAggregateOutputType = {
@@ -130,6 +142,10 @@ export type PaperCountAggregateOutputType = {
   githubForks: number
   githubStars: number
   githubUrl: number
+  isOfficialCode: number
+  hfUpvotes: number
+  trendingScore: number
+  discoverySource: number
   _all: number
 }
 
@@ -140,6 +156,8 @@ export type PaperAvgAggregateInputType = {
   pageCount?: true
   githubForks?: true
   githubStars?: true
+  hfUpvotes?: true
+  trendingScore?: true
 }
 
 export type PaperSumAggregateInputType = {
@@ -148,6 +166,8 @@ export type PaperSumAggregateInputType = {
   pageCount?: true
   githubForks?: true
   githubStars?: true
+  hfUpvotes?: true
+  trendingScore?: true
 }
 
 export type PaperMinAggregateInputType = {
@@ -178,6 +198,10 @@ export type PaperMinAggregateInputType = {
   githubForks?: true
   githubStars?: true
   githubUrl?: true
+  isOfficialCode?: true
+  hfUpvotes?: true
+  trendingScore?: true
+  discoverySource?: true
 }
 
 export type PaperMaxAggregateInputType = {
@@ -208,6 +232,10 @@ export type PaperMaxAggregateInputType = {
   githubForks?: true
   githubStars?: true
   githubUrl?: true
+  isOfficialCode?: true
+  hfUpvotes?: true
+  trendingScore?: true
+  discoverySource?: true
 }
 
 export type PaperCountAggregateInputType = {
@@ -238,6 +266,10 @@ export type PaperCountAggregateInputType = {
   githubForks?: true
   githubStars?: true
   githubUrl?: true
+  isOfficialCode?: true
+  hfUpvotes?: true
+  trendingScore?: true
+  discoverySource?: true
   _all?: true
 }
 
@@ -355,6 +387,10 @@ export type PaperGroupByOutputType = {
   githubForks: number | null
   githubStars: number | null
   githubUrl: string | null
+  isOfficialCode: boolean | null
+  hfUpvotes: number | null
+  trendingScore: number | null
+  discoverySource: string | null
   _count: PaperCountAggregateOutputType | null
   _avg: PaperAvgAggregateOutputType | null
   _sum: PaperSumAggregateOutputType | null
@@ -408,6 +444,10 @@ export type PaperWhereInput = {
   githubForks?: Prisma.IntNullableFilter<"Paper"> | number | null
   githubStars?: Prisma.IntNullableFilter<"Paper"> | number | null
   githubUrl?: Prisma.StringNullableFilter<"Paper"> | string | null
+  isOfficialCode?: Prisma.BoolNullableFilter<"Paper"> | boolean | null
+  hfUpvotes?: Prisma.IntNullableFilter<"Paper"> | number | null
+  trendingScore?: Prisma.FloatNullableFilter<"Paper"> | number | null
+  discoverySource?: Prisma.StringNullableFilter<"Paper"> | string | null
   authors?: Prisma.PaperAuthorListRelationFilter
   conferences?: Prisma.PaperConferenceListRelationFilter
   datasets?: Prisma.PaperDatasetListRelationFilter
@@ -451,6 +491,10 @@ export type PaperOrderByWithRelationInput = {
   githubForks?: Prisma.SortOrderInput | Prisma.SortOrder
   githubStars?: Prisma.SortOrderInput | Prisma.SortOrder
   githubUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  isOfficialCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrderInput | Prisma.SortOrder
+  trendingScore?: Prisma.SortOrderInput | Prisma.SortOrder
+  discoverySource?: Prisma.SortOrderInput | Prisma.SortOrder
   authors?: Prisma.PaperAuthorOrderByRelationAggregateInput
   conferences?: Prisma.PaperConferenceOrderByRelationAggregateInput
   datasets?: Prisma.PaperDatasetOrderByRelationAggregateInput
@@ -497,6 +541,10 @@ export type PaperWhereUniqueInput = Prisma.AtLeast<{
   githubForks?: Prisma.IntNullableFilter<"Paper"> | number | null
   githubStars?: Prisma.IntNullableFilter<"Paper"> | number | null
   githubUrl?: Prisma.StringNullableFilter<"Paper"> | string | null
+  isOfficialCode?: Prisma.BoolNullableFilter<"Paper"> | boolean | null
+  hfUpvotes?: Prisma.IntNullableFilter<"Paper"> | number | null
+  trendingScore?: Prisma.FloatNullableFilter<"Paper"> | number | null
+  discoverySource?: Prisma.StringNullableFilter<"Paper"> | string | null
   authors?: Prisma.PaperAuthorListRelationFilter
   conferences?: Prisma.PaperConferenceListRelationFilter
   datasets?: Prisma.PaperDatasetListRelationFilter
@@ -540,6 +588,10 @@ export type PaperOrderByWithAggregationInput = {
   githubForks?: Prisma.SortOrderInput | Prisma.SortOrder
   githubStars?: Prisma.SortOrderInput | Prisma.SortOrder
   githubUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  isOfficialCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrderInput | Prisma.SortOrder
+  trendingScore?: Prisma.SortOrderInput | Prisma.SortOrder
+  discoverySource?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.PaperCountOrderByAggregateInput
   _avg?: Prisma.PaperAvgOrderByAggregateInput
   _max?: Prisma.PaperMaxOrderByAggregateInput
@@ -578,6 +630,10 @@ export type PaperScalarWhereWithAggregatesInput = {
   githubForks?: Prisma.IntNullableWithAggregatesFilter<"Paper"> | number | null
   githubStars?: Prisma.IntNullableWithAggregatesFilter<"Paper"> | number | null
   githubUrl?: Prisma.StringNullableWithAggregatesFilter<"Paper"> | string | null
+  isOfficialCode?: Prisma.BoolNullableWithAggregatesFilter<"Paper"> | boolean | null
+  hfUpvotes?: Prisma.IntNullableWithAggregatesFilter<"Paper"> | number | null
+  trendingScore?: Prisma.FloatNullableWithAggregatesFilter<"Paper"> | number | null
+  discoverySource?: Prisma.StringNullableWithAggregatesFilter<"Paper"> | string | null
 }
 
 export type PaperCreateInput = {
@@ -608,6 +664,10 @@ export type PaperCreateInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -651,6 +711,10 @@ export type PaperUncheckedCreateInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -694,6 +758,10 @@ export type PaperUpdateInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -737,6 +805,10 @@ export type PaperUncheckedUpdateInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -780,6 +852,10 @@ export type PaperCreateManyInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
 }
 
 export type PaperUpdateManyMutationInput = {
@@ -810,6 +886,10 @@ export type PaperUpdateManyMutationInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type PaperUncheckedUpdateManyInput = {
@@ -840,6 +920,10 @@ export type PaperUncheckedUpdateManyInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type PaperCountOrderByAggregateInput = {
@@ -870,6 +954,10 @@ export type PaperCountOrderByAggregateInput = {
   githubForks?: Prisma.SortOrder
   githubStars?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrder
+  isOfficialCode?: Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrder
+  trendingScore?: Prisma.SortOrder
+  discoverySource?: Prisma.SortOrder
 }
 
 export type PaperAvgOrderByAggregateInput = {
@@ -878,6 +966,8 @@ export type PaperAvgOrderByAggregateInput = {
   pageCount?: Prisma.SortOrder
   githubForks?: Prisma.SortOrder
   githubStars?: Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrder
+  trendingScore?: Prisma.SortOrder
 }
 
 export type PaperMaxOrderByAggregateInput = {
@@ -908,6 +998,10 @@ export type PaperMaxOrderByAggregateInput = {
   githubForks?: Prisma.SortOrder
   githubStars?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrder
+  isOfficialCode?: Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrder
+  trendingScore?: Prisma.SortOrder
+  discoverySource?: Prisma.SortOrder
 }
 
 export type PaperMinOrderByAggregateInput = {
@@ -938,6 +1032,10 @@ export type PaperMinOrderByAggregateInput = {
   githubForks?: Prisma.SortOrder
   githubStars?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrder
+  isOfficialCode?: Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrder
+  trendingScore?: Prisma.SortOrder
+  discoverySource?: Prisma.SortOrder
 }
 
 export type PaperSumOrderByAggregateInput = {
@@ -946,6 +1044,8 @@ export type PaperSumOrderByAggregateInput = {
   pageCount?: Prisma.SortOrder
   githubForks?: Prisma.SortOrder
   githubStars?: Prisma.SortOrder
+  hfUpvotes?: Prisma.SortOrder
+  trendingScore?: Prisma.SortOrder
 }
 
 export type PaperScalarRelationFilter = {
@@ -983,6 +1083,18 @@ export type NullableIntFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type NullableBoolFieldUpdateOperationsInput = {
+  set?: boolean | null
+}
+
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type PaperCreateNestedOneWithoutTasksInput = {
@@ -1195,6 +1307,10 @@ export type PaperCreateWithoutTasksInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -1237,6 +1353,10 @@ export type PaperUncheckedCreateWithoutTasksInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -1295,6 +1415,10 @@ export type PaperUpdateWithoutTasksInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -1337,6 +1461,10 @@ export type PaperUncheckedUpdateWithoutTasksInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -1379,6 +1507,10 @@ export type PaperCreateWithoutMethodsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -1421,6 +1553,10 @@ export type PaperUncheckedCreateWithoutMethodsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -1479,6 +1615,10 @@ export type PaperUpdateWithoutMethodsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -1521,6 +1661,10 @@ export type PaperUncheckedUpdateWithoutMethodsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -1563,6 +1707,10 @@ export type PaperCreateWithoutSotaClaimsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -1605,6 +1753,10 @@ export type PaperUncheckedCreateWithoutSotaClaimsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -1663,6 +1815,10 @@ export type PaperUpdateWithoutSotaClaimsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -1705,6 +1861,10 @@ export type PaperUncheckedUpdateWithoutSotaClaimsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -1747,6 +1907,10 @@ export type PaperCreateWithoutRankingsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -1789,6 +1953,10 @@ export type PaperUncheckedCreateWithoutRankingsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -1847,6 +2015,10 @@ export type PaperUpdateWithoutRankingsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -1889,6 +2061,10 @@ export type PaperUncheckedUpdateWithoutRankingsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -1931,6 +2107,10 @@ export type PaperCreateWithoutAuthorsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
   journals?: Prisma.PaperJournalCreateNestedManyWithoutPaperInput
@@ -1973,6 +2153,10 @@ export type PaperUncheckedCreateWithoutAuthorsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
   journals?: Prisma.PaperJournalUncheckedCreateNestedManyWithoutPaperInput
@@ -2031,6 +2215,10 @@ export type PaperUpdateWithoutAuthorsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
   journals?: Prisma.PaperJournalUpdateManyWithoutPaperNestedInput
@@ -2073,6 +2261,10 @@ export type PaperUncheckedUpdateWithoutAuthorsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
   journals?: Prisma.PaperJournalUncheckedUpdateManyWithoutPaperNestedInput
@@ -2115,6 +2307,10 @@ export type PaperCreateWithoutModelsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -2157,6 +2353,10 @@ export type PaperUncheckedCreateWithoutModelsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -2215,6 +2415,10 @@ export type PaperUpdateWithoutModelsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -2257,6 +2461,10 @@ export type PaperUncheckedUpdateWithoutModelsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -2299,6 +2507,10 @@ export type PaperCreateWithoutDatasetsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   journals?: Prisma.PaperJournalCreateNestedManyWithoutPaperInput
@@ -2341,6 +2553,10 @@ export type PaperUncheckedCreateWithoutDatasetsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   journals?: Prisma.PaperJournalUncheckedCreateNestedManyWithoutPaperInput
@@ -2399,6 +2615,10 @@ export type PaperUpdateWithoutDatasetsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   journals?: Prisma.PaperJournalUpdateManyWithoutPaperNestedInput
@@ -2441,6 +2661,10 @@ export type PaperUncheckedUpdateWithoutDatasetsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   journals?: Prisma.PaperJournalUncheckedUpdateManyWithoutPaperNestedInput
@@ -2483,6 +2707,10 @@ export type PaperCreateWithoutLabsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -2525,6 +2753,10 @@ export type PaperUncheckedCreateWithoutLabsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -2583,6 +2815,10 @@ export type PaperUpdateWithoutLabsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -2625,6 +2861,10 @@ export type PaperUncheckedUpdateWithoutLabsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -2667,6 +2907,10 @@ export type PaperCreateWithoutUniversitiesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -2709,6 +2953,10 @@ export type PaperUncheckedCreateWithoutUniversitiesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -2767,6 +3015,10 @@ export type PaperUpdateWithoutUniversitiesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -2809,6 +3061,10 @@ export type PaperUncheckedUpdateWithoutUniversitiesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -2851,6 +3107,10 @@ export type PaperCreateWithoutConferencesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
   journals?: Prisma.PaperJournalCreateNestedManyWithoutPaperInput
@@ -2893,6 +3153,10 @@ export type PaperUncheckedCreateWithoutConferencesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
   journals?: Prisma.PaperJournalUncheckedCreateNestedManyWithoutPaperInput
@@ -2951,6 +3215,10 @@ export type PaperUpdateWithoutConferencesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
   journals?: Prisma.PaperJournalUpdateManyWithoutPaperNestedInput
@@ -2993,6 +3261,10 @@ export type PaperUncheckedUpdateWithoutConferencesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
   journals?: Prisma.PaperJournalUncheckedUpdateManyWithoutPaperNestedInput
@@ -3035,6 +3307,10 @@ export type PaperCreateWithoutJournalsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -3077,6 +3353,10 @@ export type PaperUncheckedCreateWithoutJournalsInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -3135,6 +3415,10 @@ export type PaperUpdateWithoutJournalsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -3177,6 +3461,10 @@ export type PaperUncheckedUpdateWithoutJournalsInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -3219,6 +3507,10 @@ export type PaperCreateWithoutRepositoriesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -3261,6 +3553,10 @@ export type PaperUncheckedCreateWithoutRepositoriesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -3319,6 +3615,10 @@ export type PaperUpdateWithoutRepositoriesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -3361,6 +3661,10 @@ export type PaperUncheckedUpdateWithoutRepositoriesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -3403,6 +3707,10 @@ export type PaperCreateWithoutSummariesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetCreateNestedManyWithoutPaperInput
@@ -3445,6 +3753,10 @@ export type PaperUncheckedCreateWithoutSummariesInput = {
   githubForks?: number | null
   githubStars?: number | null
   githubUrl?: string | null
+  isOfficialCode?: boolean | null
+  hfUpvotes?: number | null
+  trendingScore?: number | null
+  discoverySource?: string | null
   authors?: Prisma.PaperAuthorUncheckedCreateNestedManyWithoutPaperInput
   conferences?: Prisma.PaperConferenceUncheckedCreateNestedManyWithoutPaperInput
   datasets?: Prisma.PaperDatasetUncheckedCreateNestedManyWithoutPaperInput
@@ -3503,6 +3815,10 @@ export type PaperUpdateWithoutSummariesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUpdateManyWithoutPaperNestedInput
@@ -3545,6 +3861,10 @@ export type PaperUncheckedUpdateWithoutSummariesInput = {
   githubForks?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubStars?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOfficialCode?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  hfUpvotes?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  trendingScore?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  discoverySource?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   authors?: Prisma.PaperAuthorUncheckedUpdateManyWithoutPaperNestedInput
   conferences?: Prisma.PaperConferenceUncheckedUpdateManyWithoutPaperNestedInput
   datasets?: Prisma.PaperDatasetUncheckedUpdateManyWithoutPaperNestedInput
@@ -3726,6 +4046,10 @@ export type PaperSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   githubForks?: boolean
   githubStars?: boolean
   githubUrl?: boolean
+  isOfficialCode?: boolean
+  hfUpvotes?: boolean
+  trendingScore?: boolean
+  discoverySource?: boolean
   authors?: boolean | Prisma.Paper$authorsArgs<ExtArgs>
   conferences?: boolean | Prisma.Paper$conferencesArgs<ExtArgs>
   datasets?: boolean | Prisma.Paper$datasetsArgs<ExtArgs>
@@ -3770,6 +4094,10 @@ export type PaperSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   githubForks?: boolean
   githubStars?: boolean
   githubUrl?: boolean
+  isOfficialCode?: boolean
+  hfUpvotes?: boolean
+  trendingScore?: boolean
+  discoverySource?: boolean
 }, ExtArgs["result"]["paper"]>
 
 export type PaperSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -3800,6 +4128,10 @@ export type PaperSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   githubForks?: boolean
   githubStars?: boolean
   githubUrl?: boolean
+  isOfficialCode?: boolean
+  hfUpvotes?: boolean
+  trendingScore?: boolean
+  discoverySource?: boolean
 }, ExtArgs["result"]["paper"]>
 
 export type PaperSelectScalar = {
@@ -3830,9 +4162,13 @@ export type PaperSelectScalar = {
   githubForks?: boolean
   githubStars?: boolean
   githubUrl?: boolean
+  isOfficialCode?: boolean
+  hfUpvotes?: boolean
+  trendingScore?: boolean
+  discoverySource?: boolean
 }
 
-export type PaperOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "shortTitle" | "abstract" | "tlDr" | "publicationDate" | "submissionDate" | "arxivId" | "doi" | "paperUrl" | "pdfUrl" | "thumbnailUrl" | "sourceUrl" | "projectUrl" | "citationCount" | "referenceCount" | "pageCount" | "paperType" | "status" | "language" | "license" | "createdAt" | "updatedAt" | "githubForks" | "githubStars" | "githubUrl", ExtArgs["result"]["paper"]>
+export type PaperOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "shortTitle" | "abstract" | "tlDr" | "publicationDate" | "submissionDate" | "arxivId" | "doi" | "paperUrl" | "pdfUrl" | "thumbnailUrl" | "sourceUrl" | "projectUrl" | "citationCount" | "referenceCount" | "pageCount" | "paperType" | "status" | "language" | "license" | "createdAt" | "updatedAt" | "githubForks" | "githubStars" | "githubUrl" | "isOfficialCode" | "hfUpvotes" | "trendingScore" | "discoverySource", ExtArgs["result"]["paper"]>
 export type PaperInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   authors?: boolean | Prisma.Paper$authorsArgs<ExtArgs>
   conferences?: boolean | Prisma.Paper$conferencesArgs<ExtArgs>
@@ -3897,6 +4233,10 @@ export type $PaperPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     githubForks: number | null
     githubStars: number | null
     githubUrl: string | null
+    isOfficialCode: boolean | null
+    hfUpvotes: number | null
+    trendingScore: number | null
+    discoverySource: string | null
   }, ExtArgs["result"]["paper"]>
   composites: {}
 }
@@ -4360,6 +4700,10 @@ export interface PaperFieldRefs {
   readonly githubForks: Prisma.FieldRef<"Paper", 'Int'>
   readonly githubStars: Prisma.FieldRef<"Paper", 'Int'>
   readonly githubUrl: Prisma.FieldRef<"Paper", 'String'>
+  readonly isOfficialCode: Prisma.FieldRef<"Paper", 'Boolean'>
+  readonly hfUpvotes: Prisma.FieldRef<"Paper", 'Int'>
+  readonly trendingScore: Prisma.FieldRef<"Paper", 'Float'>
+  readonly discoverySource: Prisma.FieldRef<"Paper", 'String'>
 }
     
 

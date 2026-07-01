@@ -2644,7 +2644,11 @@ export const PaperScalarFieldEnum = {
   updatedAt: 'updatedAt',
   githubForks: 'githubForks',
   githubStars: 'githubStars',
-  githubUrl: 'githubUrl'
+  githubUrl: 'githubUrl',
+  isOfficialCode: 'isOfficialCode',
+  hfUpvotes: 'hfUpvotes',
+  trendingScore: 'trendingScore',
+  discoverySource: 'discoverySource'
 } as const
 
 export type PaperScalarFieldEnum = (typeof PaperScalarFieldEnum)[keyof typeof PaperScalarFieldEnum]
@@ -3023,6 +3027,13 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

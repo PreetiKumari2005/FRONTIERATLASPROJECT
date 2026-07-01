@@ -1,0 +1,29 @@
+# =============================================================================
+# FrontierAtlas Backend — Cloudflare Worker Secrets (local dev)
+# =============================================================================
+# Copy this file to .dev.vars for `wrangler dev` local development.
+# For production, set these via `wrangler secret put <KEY>` or the Cloudflare
+# dashboard.
+# =============================================================================
+
+# ---------------------------
+# Database (required)
+# ---------------------------
+# Neon/PostgreSQL connection string. Must be a valid connection URL.
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+
+# ---------------------------
+# Authentication (required if auth endpoints are used)
+# ---------------------------
+# JWT signing secrets — generate with: openssl rand -base64 32
+JWT_ACCESS_SECRET="your-access-secret-here"
+JWT_REFRESH_SECRET="your-refresh-secret-here"
+
+# ---------------------------
+# Optional
+# ---------------------------
+# Number of bcrypt salt rounds. Defaults to 12 if not set.
+# BCRYPT_SALT_ROUNDS=12
+
+# Set to "production" for secure cookies (sameSite, secure flags).
+# NODE_ENV=production

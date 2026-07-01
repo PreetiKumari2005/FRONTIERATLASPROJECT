@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[9px] font-semibold text-[#8B8B8B] uppercase tracking-[0.08em] px-3 mb-0.5 mt-2 first:mt-1">
+    <p className="text-[11px] font-semibold text-[#8B8B8B] uppercase tracking-[0.08em] px-3 mb-[2px] mt-[4px] first:mt-0">
       {children}
     </p>
   );
@@ -33,13 +33,13 @@ function NavItem({
     <div
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-3 py-2 xl:py-[4px] mx-2 cursor-pointer transition-colors text-[11px] font-medium",
+        "flex items-center gap-2 px-3 py-[3.5px] mx-2 cursor-pointer transition-colors text-[14px] font-medium leading-tight",
         isActive
-          ? "text-[#F55036] font-bold"
+          ? "text-[#F55036]"
           : "text-[#555555] hover:text-[#F55036]"
       )}
     >
-      <span className="w-3.5 h-3.5 flex items-center justify-center text-[13px] shrink-0">
+      <span className="w-4 h-4 flex items-center justify-center text-[16px] shrink-0">
         {icon}
       </span>
       <span className="truncate">{label}</span>

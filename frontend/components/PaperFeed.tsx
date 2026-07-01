@@ -1,38 +1,65 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo, Profiler } from "react";
 import { Github, MessageCircle } from "lucide-react";
+import Link from "next/link";
 import { getPapers, type Paper } from "@/lib/paperApi";
 import Image from "next/image";
+
+// --- Performance Logger ---
+const logRender = (
+  id: string,
+  phase: 'mount' | 'update' | 'nested-update',
+  actualDuration: number,
+  baseDuration: number,
+  startTime: number,
+  commitTime: number
+) => {
+  console.group(`[Profiler] ${id} (${phase})`);
+  console.log(`- Actual duration: ${actualDuration.toFixed(2)}ms`);
+  console.log(`- Base duration: ${baseDuration.toFixed(2)}ms`);
+  console.log(`- Start time: ${startTime.toFixed(2)}ms`);
+  console.log(`- Commit time: ${commitTime.toFixed(2)}ms`);
+  console.groupEnd();
+};
 
 /* ─── Tag color map ──────────────────────────────────────────────────────── */
 const TAG_COLORS: Record<string, { bg: string; text: string; dot: string; border?: string }> = {
   purple: { bg: "bg-[#F3E8FF]", text: "text-[#6B21A8]", dot: "bg-[#9333EA]", border: "border border-[#D8B4FE]" },
   blue: { bg: "bg-[#E0F2FE]", text: "text-[#0369A1]", dot: "bg-[#0284C7]", border: "border border-[#BAE6FD]" },
   green: { bg: "bg-[#ECFDF5]", text: "text-[#047857]", dot: "bg-[#10B981]", border: "border border-[#A7F3D0]" },
-  cyan: { bg: "bg-[#CFFAFE]", text: "text-[#0E7490]", dot: "bg-[#06B6D4]", border: "border border-[#A5F3FC]" },
+  cyan: { bg: "bg-[#CFFAFE]", text: "text-[#0E7490]", dot: "bg-[#06B6D4]", border: "border border-[#CFFAFE]" },
   gray: { bg: "bg-white", text: "text-[#111111]", dot: "", border: "border border-[#E5E5E0]" },
 };
 
-function getTagColor(label: string): string {
+const getTagColor = (label: string): string => {
   const map: Record<string, string> = {
     "Reinforcement Learning": "blue",
     "Image Understanding": "blue",
     Agents: "green",
     "Long Context": "purple",
+    "Robotics": "cyan",
+    "World Models": "purple",
   };
-  return map[label] || "gray";
-}
+  if (map[label]) return map[label];
+
+  const colors = ["purple", "blue", "green", "cyan"];
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 
 
 /* ─── Pill tag ───────────────────────────────────────────────────────────── */
-function Pill({ label, colorKey }: { label: string; colorKey: string }) {
+const Pill = memo(({ label, colorKey }: { label: string; colorKey: string }) => {
   const c = TAG_COLORS[colorKey] || TAG_COLORS.gray;
   const isGray = colorKey === "gray";
 
   return (
     <span
-      className={`h-[28px] xl:h-[24px] inline-flex items-center px-3 xl:px-2 rounded-[4px] text-[11px] font-mono cursor-pointer hover:opacity-80 transition-opacity ${c.bg} ${c.text} ${c.border || ""} whitespace-nowrap`}
+      className={`h-[28px] xl:h-[24px] inline-flex items-center px-3 xl:px-2 rounded-[4px] text-[11px] cursor-pointer hover:opacity-80 transition-opacity ${c.bg} ${c.text} ${c.border || ""} whitespace-nowrap`}
     >
       {!isGray && (
         <span className={`w-1.5 h-1.5 rounded-full mr-2 shrink-0 ${c.dot}`} />
@@ -40,12 +67,12 @@ function Pill({ label, colorKey }: { label: string; colorKey: string }) {
       {label}
     </span>
   );
-}
-
+});
+Pill.displayName = "Pill";
 
 
 /* ─── SOTA Display ───────────────────────────────────────────────────────── */
-function SotaDisplay({ sota }: { sota: string }) {
+const SotaDisplay = memo(({ sota }: { sota: string }) => {
   if (!sota) return null;
   const segments = sota.split(" • ");
 
@@ -75,13 +102,13 @@ function SotaDisplay({ sota }: { sota: string }) {
                 <span className="text-[#B48C52] font-semibold mr-1 tracking-wide">SOTA</span>
                 <span className="mr-1 text-[10px]">🏆</span>
                 <span className="text-[#8B8B8B] mr-1 font-normal">on</span>
-                <span className="text-[#1E40AF] font-mono text-[11.5px] tracking-tighter">{benchmarks}</span>
+                <span className="text-[#1E40AF] text-[11.5px] tracking-tighter">{benchmarks}</span>
               </>
             ) : isOn ? (
               <>
                 <span className="text-[#8B8B8B] font-normal mr-1">{prefix}</span>
                 <span className="text-[#8B8B8B] mr-1 font-normal">on</span>
-                <span className="text-[#1E40AF] font-mono text-[11.5px] tracking-tighter">{benchmarks}</span>
+                <span className="text-[#1E40AF] text-[11.5px] tracking-tighter">{benchmarks}</span>
               </>
             ) : (
               <span className="text-[#8B8B8B] font-normal tracking-tight">{segment}</span>
@@ -91,10 +118,11 @@ function SotaDisplay({ sota }: { sota: string }) {
       })}
     </div>
   );
-}
+});
+SotaDisplay.displayName = "SotaDisplay";
 
 /* ─── Thumbnail ──────────────────────────────────────────────────────────── */
-function PaperThumbnail({ title, thumbnail }: { title: string; thumbnail: string }) {
+const PaperThumbnail = memo(({ title, thumbnail }: { title: string; thumbnail: string }) => {
   return (
     <div className="w-full xl:w-[170px] h-[180px] sm:h-[220px] xl:h-[240px] shrink-0 border border-[#E5E5E0] rounded-md xl:rounded-none bg-[#F8F7F2] overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.07)] relative flex items-center justify-center">
       {thumbnail ? (
@@ -106,109 +134,150 @@ function PaperThumbnail({ title, thumbnail }: { title: string; thumbnail: string
           sizes="(max-width: 1280px) 100vw, 170px"
         />
       ) : (
-        <div className="text-[#8B8B8B] text-[10px] font-mono px-4 text-center">No Cover</div>
+        <div className="text-[#8B8B8B] text-[10px] px-4 text-center">No Cover</div>
       )}
     </div>
   );
-}
+});
+PaperThumbnail.displayName = "PaperThumbnail";
 
 /* ─── Metric block ───────────────────────────────────────────────────────── */
-function Metric({
+const Metric = memo(({
   value,
   label,
   children,
+  onClick,
+  interactive = false,
 }: {
   value: string;
   label: string;
   children?: React.ReactNode;
-}) {
+  onClick?: (e: React.MouseEvent) => void;
+  interactive?: boolean;
+}) => {
+  const isInteractive = interactive || !!onClick;
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div 
+      className={`flex flex-col items-center gap-1 group/metric ${isInteractive ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClick(e);
+        }
+      }}
+    >
       <div className="flex items-center gap-1.5">
         {children}
-        <span className="text-[14.5px] font-bold text-[#111111] leading-none tabular-nums">
+        <span className={`text-[14.5px] font-bold text-[#111111] leading-none tabular-nums ${isInteractive ? 'group-hover/metric:text-[#F55036] transition-colors' : ''}`}>
           {value}
         </span>
       </div>
-      <span className="text-[8px] font-bold text-[#8B8B8B] uppercase tracking-[0.08em] leading-none">
+      <span className={`text-[8px] font-bold text-[#8B8B8B] uppercase tracking-[0.08em] leading-none ${isInteractive ? 'group-hover/metric:text-[#F55036] transition-colors' : ''}`}>
         {label}
       </span>
     </div>
   );
-}
+});
+Metric.displayName = "Metric";
 
 /* ─── Paper Card ─────────────────────────────────────────────────────────── */
-function PaperCard({ paper }: { paper: Paper }) {
+const PaperCard = memo(({ paper }: { paper: Paper }) => {
   // Parse upvotes string to float for stars/hr, e.g. "11.2K" -> "11.2"
   const upvotesNum = parseFloat(paper.upvotes) || 0;
 
+  // Format authors to avoid long lines
+  let displayAuthors = paper.authors;
+  if (paper.authors) {
+    const authorList = paper.authors.split(",").map(a => a.trim());
+    if (authorList.length > 3) {
+      displayAuthors = `${authorList.slice(0, 3).join(", ")} et al.`;
+    }
+  }
+
   return (
-    <div className="group flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent min-w-0 cursor-pointer hover:shadow-md xl:hover:bg-white xl:hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-200 rounded-xl xl:rounded-none h-full">
-      {/* LEFT — PDF thumbnail */}
-      <div className="flex flex-col justify-center shrink-0 w-full xl:w-auto">
-        <PaperThumbnail title={paper.title} thumbnail={paper.thumbnail} />
+    <Link href={`/papers/${paper.slug}`} className="no-underline">
+      <div className="group flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent min-w-0 cursor-pointer hover:shadow-md xl:hover:bg-white xl:hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-200 rounded-xl xl:rounded-none h-full">
+        {/* LEFT — PDF thumbnail */}
+        <div className="flex flex-col justify-center shrink-0 w-full xl:w-auto">
+          <PaperThumbnail title={paper.title} thumbnail={paper.thumbnail} />
+        </div>
+
+        {/* RIGHT — Content */}
+        <div className="flex-1 min-w-0 flex flex-col xl:pr-8">
+          {/* Title */}
+          <h3 className="text-[18px] xl:text-[20px] font-medium text-[#2D2D2D] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-2">
+            {paper.title}
+          </h3>
+
+          {/* Authors + date */}
+          <div className="flex items-center text-[13px] font-normal text-[#555555] mb-3 min-w-0 w-full">
+            <span className="truncate">{displayAuthors}</span>
+            <span className="mx-2 text-[#DCDCD7] shrink-0">·</span>
+            <span className="shrink-0">{paper.date}</span>
+          </div>
+
+          {/* Description */}
+          <p className="text-[14px] font-normal text-[#555555] leading-[1.6] mb-4 line-clamp-3">
+            {paper.description}
+          </p>
+
+          {/* Benchmark / SOTA (Row 1) */}
+          <div className="w-full overflow-hidden">
+            <SotaDisplay sota={paper.sota} />
+          </div>
+
+          {/* Tasks (Row 2) */}
+          <div className="flex flex-nowrap items-center gap-2 mb-2 w-full overflow-hidden">
+            {paper.tags?.map((t) => {
+              const colorKey = getTagColor(t);
+              return <Pill key={t} label={t} colorKey={colorKey} />;
+            })}
+          </div>
+
+          {/* Methods (Row 3) */}
+          <div className="flex flex-nowrap items-center gap-2 w-full overflow-hidden">
+            {paper.additionalTags?.map((t) => {
+              return <Pill key={t} label={t} colorKey="gray" /> ;
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT — Metrics */}
+        <div className="shrink-0 flex items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] mt-auto xl:mt-0 pt-4 xl:pt-0 w-full xl:w-auto">
+          <div className="flex flex-row xl:flex-col justify-around xl:justify-around items-center w-full xl:w-[64px] xl:py-2 gap-2 xl:gap-0">
+            <Metric 
+              value={`↑${upvotesNum}`} 
+              label="Stars / Hr"
+              onClick={paper.githubUrl ? () => window.open(paper.githubUrl, '_blank', 'noopener,noreferrer') : undefined}
+              interactive={!!paper.githubUrl}
+            >
+              {/* Minimal optional icon if needed */}
+            </Metric>
+
+            <Metric 
+              value={paper.repo} 
+              label="Repo"
+              onClick={paper.githubUrl ? () => window.open(paper.githubUrl, '_blank', 'noopener,noreferrer') : undefined}
+              interactive={!!paper.githubUrl}
+            >
+              <Github size={13} className="text-[#8B8B8B] shrink-0" />
+            </Metric>
+
+            <Metric 
+              value={(paper.citations || 0).toString()} 
+              label="Citations"
+              interactive={true}
+            >
+              <MessageCircle size={13} className="text-[#8B8B8B] shrink-0" />
+            </Metric>
+          </div>
+        </div>
       </div>
-
-      {/* RIGHT — Content */}
-      <div className="flex-1 min-w-0 flex flex-col xl:pr-8">
-        {/* Title */}
-        <h3 className="text-[18px] xl:text-[20px] font-serif font-medium text-[#2D2D2D] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-2">
-          {paper.title}
-        </h3>
-
-        {/* Authors + date */}
-        <p className="text-[13px] font-normal text-[#555555] mb-3 truncate">
-          {paper.authors}
-          <span className="mx-2 text-[#DCDCD7]">·</span>
-          {paper.date}
-        </p>
-
-        {/* Description */}
-        <p className="text-[14px] font-normal text-[#555555] leading-[1.6] mb-4 line-clamp-3">
-          {paper.description}
-        </p>
-
-        {/* Benchmark / SOTA (Row 1) */}
-        <div className="w-full overflow-hidden">
-          <SotaDisplay sota={paper.sota} />
-        </div>
-
-        {/* Tasks (Row 2) */}
-        <div className="flex flex-nowrap items-center gap-2 mb-2 w-full overflow-hidden">
-          {paper.tags?.map((t) => {
-            const colorKey = getTagColor(t);
-            return <Pill key={t} label={t} colorKey={colorKey} />;
-          })}
-        </div>
-
-        {/* Methods (Row 3) */}
-        <div className="flex flex-nowrap items-center gap-2 w-full overflow-hidden">
-          {paper.additionalTags?.map((t) => {
-            const colorKey = getTagColor(t);
-            return <Pill key={t} label={t} colorKey={colorKey} />;
-          })}
-        </div>
-      </div>
-
-      {/* RIGHT — Metrics */}
-      <div className="shrink-0 flex items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] mt-auto xl:mt-0 pt-4 xl:pt-0 w-full xl:w-auto">
-        <div className="flex flex-row xl:flex-col justify-around xl:justify-around items-center w-full xl:w-[64px] xl:py-2 gap-2 xl:gap-0">
-          <Metric value={`↑${upvotesNum}`} label="Stars / Hr">
-            {/* Minimal optional icon if needed */}
-          </Metric>
-
-          <Metric value={paper.repo} label="Repo">
-            <Github size={13} className="text-[#8B8B8B] shrink-0" />
-          </Metric>
-
-          <Metric value={(paper.citations || 0).toString()} label="Citations">
-            <MessageCircle size={13} className="text-[#8B8B8B] shrink-0" />
-          </Metric>
-        </div>
-      </div>
-    </div>
+    </Link>
   );
-}
+});
+PaperCard.displayName = "PaperCard";
 
 /* ─── List ───────────────────────────────────────────────────────────────── */
 export default function PaperList({
@@ -222,66 +291,93 @@ export default function PaperList({
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
- useEffect(() => {
-  const scrollContainer = document.getElementById(
-    "scroll-container"
-  ) as HTMLElement;
+  // Track page load performance
+  useEffect(() => {
+    console.log(`[PaperList] Page ${page} selectedTag="${selectedTag}" start loading papers count:`, papers.length);
+    const startTime = performance.now();
+    const endLoad = () => {
+      const duration = performance.now() - startTime;
+      console.log(`[PaperList] Load complete in ${duration.toFixed(2)}ms`);
+    };
+    endLoad();
+  }, [page, selectedTag, papers.length]);
 
-  if (!scrollContainer) return;
-
-  function handleScroll() {
-    console.log("SCROLLING");
+  // Handle scroll logic
+  const handleScroll = useCallback(() => {
+    const scrollContainer = document.getElementById("scroll-container") as HTMLElement;
+    if (!scrollContainer) return;
 
     const nearBottom =
       scrollContainer.scrollTop + scrollContainer.clientHeight >=
       scrollContainer.scrollHeight - 500;
 
     if (nearBottom && !loading && hasMore) {
-  console.log("BOTTOM REACHED");
-  setPage((prev) => prev + 1);
-}
-  }
+      console.log(`[PaperList] Near bottom, loading page ${page + 1}`);
+      setPage((prev) => prev + 1);
+    }
+  }, [loading, hasMore, page]);
 
-  scrollContainer.addEventListener("scroll", handleScroll);
+  // Setup scroll listener with requestAnimationFrame throttling
+  useEffect(() => {
+    const scrollContainer = document.getElementById("scroll-container") as HTMLElement;
+    if (!scrollContainer) return;
 
-  return () => {
-    scrollContainer.removeEventListener("scroll", handleScroll);
-  };
-}, [loading, hasMore]);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    scrollContainer.addEventListener("scroll", onScroll);
+
+    return () => {
+      scrollContainer.removeEventListener("scroll", onScroll);
+    };
+  }, [handleScroll]);
 
   useEffect(() => {
-  setPapers([]);
-  setPage(1);
-  setHasMore(true);
-}, [selectedTag]);
+    setPapers([]);
+    setPage(1);
+    setHasMore(true);
+  }, [selectedTag]);
 
   useEffect(() => {
     async function loadPapers() {
-  try {
-    setLoading(true);
-    const task =
-  selectedTag && selectedTag !== "All Topics"
-    ? selectedTag.toLowerCase().replace(/\s+/g, "-")
-    : undefined;
+      try {
+        setLoading(true);
+        const task =
+          selectedTag && selectedTag !== "All Topics"
+            ? selectedTag.toLowerCase().replace(/\s+/g, "-")
+            : undefined;
 
-const data = await getPapers(page, task);
-    if (data.length === 0) {
-  setHasMore(false);
-}
-    
-    setPapers((prev) => [...prev, ...data]);
-    setError(null);
-  } catch (err) {
-    console.error(err);
-    setError('Failed to load papers. Please try again later.');
-  } finally {
-    setLoading(false);
-  }
-}
+        const apiStartTime = performance.now();
+        const result = await getPapers({ page, task });
+        const apiDuration = performance.now() - apiStartTime;
+        console.log(`[PaperList] API call completed in ${apiDuration.toFixed(2)}ms`);
+
+        setHasMore(result.hasMore);
+        
+        setPapers((prev) => {
+          const existingSlugs = new Set(prev.map(p => p.slug));
+          const newPapers = result.papers.filter(p => !existingSlugs.has(p.slug));
+          console.log(`[PaperList] Adding ${newPapers.length} new papers, total now ${prev.length + newPapers.length}`);
+          return [...prev, ...newPapers];
+        });
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load papers. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }
     loadPapers();
   }, [page, selectedTag]);
-
- 
 
   if (error) {
     return (
@@ -292,18 +388,20 @@ const data = await getPapers(page, task);
   }
 
   return (
-  <div className="pb-12 bg-transparent grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-col gap-6 xl:gap-0">
+    <Profiler id="PaperList" onRender={logRender}>
+      <div className="pb-12 bg-transparent grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-col gap-6 xl:gap-0">
+        {papers.map((paper) => (
+          <Profiler key={paper.slug} id={`PaperCard-${paper.slug}`} onRender={logRender}>
+            <PaperCard key={paper.slug} paper={paper} />
+          </Profiler>
+        ))}
 
-    {papers.map((paper) => (
-      <PaperCard key={paper.id} paper={paper} />
-    ))}
-
-    {loading && (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E40AF]" />
+        {loading && (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1E40AF]" />
+          </div>
+        )}
       </div>
-    )}
-
-  </div>
-);
+    </Profiler>
+  );
 }
