@@ -29,7 +29,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="h-[56px] lg:h-[52px] w-full bg-[#F8F7F2] border-b border-[#E5E5E0] flex items-center justify-between px-4 md:px-8 xl:px-12 gap-3 lg:gap-4 shrink-0 z-50">
+      <nav className="h-[56px] lg:h-[52px] w-full bg-[#F8F7F2] flex items-center justify-between px-4 md:px-8 xl:px-12 gap-3 lg:gap-4 shrink-0 z-50">
         {/* Mobile Left (Hamburger + Logo) */}
         <div className="flex items-center gap-1 lg:gap-0 lg:w-[240px] shrink-0">
           <button 

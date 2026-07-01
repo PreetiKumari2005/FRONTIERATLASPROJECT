@@ -4,6 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Bot, Brain, Eye, Code2, Cpu, Grid, Loader2 } from "lucide-react";
 import { searchPapers, type Paper } from "@/lib/paperApi";
 
+const formatAuthors = (authorsStr: string) => {
+  if (!authorsStr) return "";
+  const authorList = authorsStr.split(",").map(a => a.trim());
+  if (authorList.length > 3) {
+    return `${authorList.slice(0, 3).join(", ")} et al.`;
+  }
+  return authorsStr;
+};
+
 export default function HeroSection({
   selectedTag,
   setSelectedTag,
@@ -65,8 +74,7 @@ export default function HeroSection({
   ];
 
   return (
-    <div className="w-full flex flex-col items-center justify-center pt-3 md:pt-5 pb-3 md:pb-10 px-4 md:px-10 rounded-[24px] relative overflow-hidden shrink-0 text-center border border-[#FDECE8]" style={{ background: "linear-gradient(180deg, #FFF6F3 0%, #F8F7F2 100%)" }}>
-
+    <div className="w-full flex flex-col items-center justify-center pt-4 md:pt-6 pb-6 md:pb-10 relative shrink-0 text-center">
       <div className="w-full flex flex-col items-center z-10">
         <h1 className="text-[17px] min-[375px]:text-[19px] sm:text-[24px] md:text-[32px] lg:text-[36px] font-bold leading-[1.2] md:leading-[1.05] tracking-tight text-[#111111] mb-2 md:mb-1.5 whitespace-nowrap">
           Discover what&apos;s next in <span className="text-[#F55036]">AI research.</span>
@@ -109,10 +117,10 @@ export default function HeroSection({
                   {results.map((paper) => (
                     <li key={paper.id} className="px-4 py-3 hover:bg-[#F8F7F2] cursor-pointer border-b border-[#F5F5F5] last:border-0 transition-colors">
                       <div className="text-[14px] font-medium text-[#111111] line-clamp-1">{paper.title}</div>
-                      <div className="text-[12px] text-[#8B8B8B] truncate mt-1">
-                        {paper.authors}
-                        <span className="mx-1.5 text-[#DCDCD7]">·</span>
-                        {paper.date}
+                      <div className="flex items-center text-[12px] text-[#8B8B8B] mt-1 min-w-0 w-full">
+                        <span className="truncate">{formatAuthors(paper.authors)}</span>
+                        <span className="mx-1.5 text-[#DCDCD7] shrink-0">·</span>
+                        <span className="shrink-0">{paper.date}</span>
                       </div>
                     </li>
                   ))}

@@ -15,6 +15,7 @@ export interface Paper {
   repo: string;
   citations: number;
   conference?: string;
+  githubUrl?: string;
 }
 
 export interface PapersResponse {
@@ -107,6 +108,7 @@ function mapBackendPaper(raw: Record<string, unknown>): Paper {
     repo: String(raw.githubForks || 0),
     citations: Number(raw.citationCount || raw.citations || 0),
     conference: String(raw.conference || ""),
+    githubUrl: raw.githubUrl ? String(raw.githubUrl) : undefined,
   };
 }
 

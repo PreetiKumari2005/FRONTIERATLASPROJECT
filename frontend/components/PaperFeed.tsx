@@ -38,8 +38,17 @@ const getTagColor = (label: string): string => {
     "Image Understanding": "blue",
     Agents: "green",
     "Long Context": "purple",
+    "Robotics": "cyan",
+    "World Models": "purple",
   };
-  return map[label] || "gray";
+  if (map[label]) return map[label];
+
+  const colors = ["purple", "blue", "green", "cyan"];
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
 };
 
 
@@ -50,7 +59,7 @@ const Pill = memo(({ label, colorKey }: { label: string; colorKey: string }) => 
 
   return (
     <span
-      className={`h-[28px] xl:h-[24px] inline-flex items-center px-3 xl:px-2 rounded-[4px] text-[11px] font-mono cursor-pointer hover:opacity-80 transition-opacity ${c.bg} ${c.text} ${c.border || ""} whitespace-nowrap`}
+      className={`h-[28px] xl:h-[24px] inline-flex items-center px-3 xl:px-2 rounded-[4px] text-[11px] cursor-pointer hover:opacity-80 transition-opacity ${c.bg} ${c.text} ${c.border || ""} whitespace-nowrap`}
     >
       {!isGray && (
         <span className={`w-1.5 h-1.5 rounded-full mr-2 shrink-0 ${c.dot}`} />
@@ -93,13 +102,13 @@ const SotaDisplay = memo(({ sota }: { sota: string }) => {
                 <span className="text-[#B48C52] font-semibold mr-1 tracking-wide">SOTA</span>
                 <span className="mr-1 text-[10px]">🏆</span>
                 <span className="text-[#8B8B8B] mr-1 font-normal">on</span>
-                <span className="text-[#1E40AF] font-mono text-[11.5px] tracking-tighter">{benchmarks}</span>
+                <span className="text-[#1E40AF] text-[11.5px] tracking-tighter">{benchmarks}</span>
               </>
             ) : isOn ? (
               <>
                 <span className="text-[#8B8B8B] font-normal mr-1">{prefix}</span>
                 <span className="text-[#8B8B8B] mr-1 font-normal">on</span>
-                <span className="text-[#1E40AF] font-mono text-[11.5px] tracking-tighter">{benchmarks}</span>
+                <span className="text-[#1E40AF] text-[11.5px] tracking-tighter">{benchmarks}</span>
               </>
             ) : (
               <span className="text-[#8B8B8B] font-normal tracking-tight">{segment}</span>
@@ -125,7 +134,7 @@ const PaperThumbnail = memo(({ title, thumbnail }: { title: string; thumbnail: s
           sizes="(max-width: 1280px) 100vw, 170px"
         />
       ) : (
-        <div className="text-[#8B8B8B] text-[10px] font-mono px-4 text-center">No Cover</div>
+        <div className="text-[#8B8B8B] text-[10px] px-4 text-center">No Cover</div>
       )}
     </div>
   );
@@ -137,20 +146,34 @@ const Metric = memo(({
   value,
   label,
   children,
+  onClick,
+  interactive = false,
 }: {
   value: string;
   label: string;
   children?: React.ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
+  interactive?: boolean;
 }) => {
+  const isInteractive = interactive || !!onClick;
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div 
+      className={`flex flex-col items-center gap-1 group/metric ${isInteractive ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+          e.stopPropagation();
+          onClick(e);
+        }
+      }}
+    >
       <div className="flex items-center gap-1.5">
         {children}
-        <span className="text-[14.5px] font-bold text-[#111111] leading-none tabular-nums">
+        <span className={`text-[14.5px] font-bold text-[#111111] leading-none tabular-nums ${isInteractive ? 'group-hover/metric:text-[#F55036] transition-colors' : ''}`}>
           {value}
         </span>
       </div>
-      <span className="text-[8px] font-bold text-[#8B8B8B] uppercase tracking-[0.08em] leading-none">
+      <span className={`text-[8px] font-bold text-[#8B8B8B] uppercase tracking-[0.08em] leading-none ${isInteractive ? 'group-hover/metric:text-[#F55036] transition-colors' : ''}`}>
         {label}
       </span>
     </div>
@@ -163,6 +186,15 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
   // Parse upvotes string to float for stars/hr, e.g. "11.2K" -> "11.2"
   const upvotesNum = parseFloat(paper.upvotes) || 0;
 
+  // Format authors to avoid long lines
+  let displayAuthors = paper.authors;
+  if (paper.authors) {
+    const authorList = paper.authors.split(",").map(a => a.trim());
+    if (authorList.length > 3) {
+      displayAuthors = `${authorList.slice(0, 3).join(", ")} et al.`;
+    }
+  }
+
   return (
     <Link href={`/papers/${paper.slug}`} className="no-underline">
       <div className="group flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent min-w-0 cursor-pointer hover:shadow-md xl:hover:bg-white xl:hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] transition-all duration-200 rounded-xl xl:rounded-none h-full">
@@ -174,16 +206,16 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
         {/* RIGHT — Content */}
         <div className="flex-1 min-w-0 flex flex-col xl:pr-8">
           {/* Title */}
-          <h3 className="text-[18px] xl:text-[20px] font-serif font-medium text-[#2D2D2D] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-2">
+          <h3 className="text-[18px] xl:text-[20px] font-medium text-[#2D2D2D] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-2">
             {paper.title}
           </h3>
 
           {/* Authors + date */}
-          <p className="text-[13px] font-normal text-[#555555] mb-3 truncate">
-            {paper.authors}
-            <span className="mx-2 text-[#DCDCD7]">·</span>
-            {paper.date}
-          </p>
+          <div className="flex items-center text-[13px] font-normal text-[#555555] mb-3 min-w-0 w-full">
+            <span className="truncate">{displayAuthors}</span>
+            <span className="mx-2 text-[#DCDCD7] shrink-0">·</span>
+            <span className="shrink-0">{paper.date}</span>
+          </div>
 
           {/* Description */}
           <p className="text-[14px] font-normal text-[#555555] leading-[1.6] mb-4 line-clamp-3">
@@ -206,8 +238,7 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
           {/* Methods (Row 3) */}
           <div className="flex flex-nowrap items-center gap-2 w-full overflow-hidden">
             {paper.additionalTags?.map((t) => {
-              const colorKey = getTagColor(t);
-              return <Pill key={t} label={t} colorKey={colorKey} />;
+              return <Pill key={t} label={t} colorKey="gray" /> ;
             })}
           </div>
         </div>
@@ -215,15 +246,29 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
         {/* RIGHT — Metrics */}
         <div className="shrink-0 flex items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] mt-auto xl:mt-0 pt-4 xl:pt-0 w-full xl:w-auto">
           <div className="flex flex-row xl:flex-col justify-around xl:justify-around items-center w-full xl:w-[64px] xl:py-2 gap-2 xl:gap-0">
-            <Metric value={`↑${upvotesNum}`} label="Stars / Hr">
+            <Metric 
+              value={`↑${upvotesNum}`} 
+              label="Stars / Hr"
+              onClick={paper.githubUrl ? () => window.open(paper.githubUrl, '_blank', 'noopener,noreferrer') : undefined}
+              interactive={!!paper.githubUrl}
+            >
               {/* Minimal optional icon if needed */}
             </Metric>
 
-            <Metric value={paper.repo} label="Repo">
+            <Metric 
+              value={paper.repo} 
+              label="Repo"
+              onClick={paper.githubUrl ? () => window.open(paper.githubUrl, '_blank', 'noopener,noreferrer') : undefined}
+              interactive={!!paper.githubUrl}
+            >
               <Github size={13} className="text-[#8B8B8B] shrink-0" />
             </Metric>
 
-            <Metric value={(paper.citations || 0).toString()} label="Citations">
+            <Metric 
+              value={(paper.citations || 0).toString()} 
+              label="Citations"
+              interactive={true}
+            >
               <MessageCircle size={13} className="text-[#8B8B8B] shrink-0" />
             </Metric>
           </div>
