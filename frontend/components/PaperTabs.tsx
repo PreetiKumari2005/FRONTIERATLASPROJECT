@@ -4,8 +4,24 @@ import { useState } from "react";
 
 const TABS = ["Today", "This Week", "This Month", "All time"];
 
-export default function PaperTabs() {
-  const [activeTab, setActiveTab] = useState("Today");
+interface PaperTabsProps {
+  selectedPeriod?: string;
+  onPeriodSelect?: (period: string) => void;
+}
+
+export default function PaperTabs({
+  selectedPeriod,
+  onPeriodSelect,
+}: PaperTabsProps = {}) {
+  const [internalActiveTab, setInternalActiveTab] = useState("Today");
+  const activeTab = selectedPeriod ?? internalActiveTab;
+
+  const handleTabClick = (tab: string) => {
+    if (selectedPeriod === undefined) {
+      setInternalActiveTab(tab);
+    }
+    onPeriodSelect?.(tab);
+  };
 
   return (
     <div className="border-b border-[#E5E5E0] mb-3">
@@ -13,7 +29,7 @@ export default function PaperTabs() {
         {TABS.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabClick(tab)}
             className={`px-1 py-3 mr-8 text-[13px] font-normal border-b transition-all duration-150 cursor-pointer whitespace-nowrap
               ${
                 activeTab === tab

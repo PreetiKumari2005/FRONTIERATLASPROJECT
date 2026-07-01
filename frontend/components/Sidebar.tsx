@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Flame, Clock, Star, Bot, Brain, MessageSquare, Code2,
   Monitor, Globe, Cpu, Zap, Link, RefreshCw, Layers,
@@ -47,10 +47,28 @@ function NavItem({
   );
 }
 
-export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
-  const [activeItem, setActiveItem] = useState("Trending Papers");
+interface SidebarProps {
+  onItemClick?: () => void;
+  onItemSelect?: (item: string) => void;
+  initialActive?: string;
+}
 
+export default function Sidebar({
+  onItemClick,
+  onItemSelect,
+  initialActive = "Trending Papers",
+}: SidebarProps) {
+  const [activeItem, setActiveItem] = useState(initialActive);
 
+  useEffect(() => {
+    setActiveItem(initialActive);
+  }, [initialActive]);
+
+  const handleItemClick = (label: string) => {
+    setActiveItem(label);
+    onItemSelect?.(label);
+    onItemClick?.();
+  };
 
   // Static Navigation Sections
   const discover = [
@@ -88,10 +106,10 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
 
   return (
     <aside className="flex flex-col w-full bg-transparent overflow-hidden">
-      
+
       {/* Non-scrollable Nav Area */}
       <div className="flex flex-col gap-2">
-        
+
         <div className="flex flex-col">
           <SectionLabel>DISCOVER</SectionLabel>
           {discover.map((item) => (
@@ -100,10 +118,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => {
-                setActiveItem(item.label);
-                onItemClick?.();
-              }}
+              onClick={() => handleItemClick(item.label)}
             />
           ))}
         </div>
@@ -115,10 +130,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => {
-                setActiveItem(item.label);
-                onItemClick?.();
-              }}
+              onClick={() => handleItemClick(item.label)}
             />
           ))}
         </div>
@@ -131,10 +143,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => {
-                setActiveItem(item.label);
-                onItemClick?.();
-              }}
+              onClick={() => handleItemClick(item.label)}
             />
           ))}
         </div>
@@ -147,10 +156,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
               icon={item.icon}
               label={item.label}
               isActive={activeItem === item.label}
-              onClick={() => {
-                setActiveItem(item.label);
-                onItemClick?.();
-              }}
+              onClick={() => handleItemClick(item.label)}
             />
           ))}
         </div>

@@ -1,5 +1,5 @@
 "use client";
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import PaperList from "@/components/PaperFeed";
@@ -125,6 +125,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const label = SLUG_TO_LABEL[slug] || "Trending Papers";
   const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("All time");
+  const filterParams = useMemo(() => getFilterParams(slug), [slug]);
 
   const handleSidebarSelect = (item: string) => {
     void item;
@@ -152,7 +153,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             />
             <PaperList
               selectedTag={selectedTag}
-              filterParams={getFilterParams(slug)}
+              filterParams={filterParams}
               period={getPeriodParam(selectedPeriod)}
             />
           </main>

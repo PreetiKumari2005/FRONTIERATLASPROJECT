@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, memo, Profiler } from "react";
 import { Github, MessageCircle } from "lucide-react";
 import Link from "next/link";
-import { getPapers, type Paper } from "@/lib/paperApi";
+import { getPapers, type GetPapersParams, type Paper } from "@/lib/paperApi";
 import Image from "next/image";
 
 // --- Performance Logger ---
@@ -157,7 +157,7 @@ const Metric = memo(({
 }) => {
   const isInteractive = interactive || !!onClick;
   return (
-    <div 
+    <div
       className={`flex flex-col items-center gap-1 group/metric ${isInteractive ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
       onClick={(e) => {
         if (onClick) {
@@ -246,8 +246,8 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
         {/* RIGHT — Metrics */}
         <div className="shrink-0 flex items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] mt-auto xl:mt-0 pt-4 xl:pt-0 w-full xl:w-auto">
           <div className="flex flex-row xl:flex-col justify-around xl:justify-around items-center w-full xl:w-[64px] xl:py-2 gap-2 xl:gap-0">
-            <Metric 
-              value={`↑${upvotesNum}`} 
+            <Metric
+              value={`↑${upvotesNum}`}
               label="Stars / Hr"
               onClick={paper.githubUrl ? () => window.open(paper.githubUrl, '_blank', 'noopener,noreferrer') : undefined}
               interactive={!!paper.githubUrl}
@@ -255,8 +255,8 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
               {/* Minimal optional icon if needed */}
             </Metric>
 
-            <Metric 
-              value={paper.repo} 
+            <Metric
+              value={paper.repo}
               label="Repo"
               onClick={paper.githubUrl ? () => window.open(paper.githubUrl, '_blank', 'noopener,noreferrer') : undefined}
               interactive={!!paper.githubUrl}
@@ -264,8 +264,8 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
               <Github size={13} className="text-[#8B8B8B] shrink-0" />
             </Metric>
 
-            <Metric 
-              value={(paper.citations || 0).toString()} 
+            <Metric
+              value={(paper.citations || 0).toString()}
               label="Citations"
               interactive={true}
             >
@@ -280,11 +280,17 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
 PaperCard.displayName = "PaperCard";
 
 /* ─── List ───────────────────────────────────────────────────────────────── */
+interface PaperListProps {
+  selectedTag?: string;
+  filterParams?: Pick<GetPapersParams, "sort" | "task" | "method">;
+  period?: GetPapersParams["period"];
+}
+
 export default function PaperList({
   selectedTag,
-}: {
-  selectedTag?: string;
-}) {
+  filterParams,
+  period,
+}: PaperListProps) {
   const [papers, setPapers] = useState<Paper[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -300,7 +306,7 @@ export default function PaperList({
       console.log(`[PaperList] Load complete in ${duration.toFixed(2)}ms`);
     };
     endLoad();
-  }, [page, selectedTag, papers.length]);
+  }, [page, selectedTag, filterParams, period, papers.length]);
 
   // Handle scroll logic
   const handleScroll = useCallback(() => {
@@ -344,24 +350,29 @@ export default function PaperList({
     setPapers([]);
     setPage(1);
     setHasMore(true);
-  }, [selectedTag]);
+  }, [selectedTag, filterParams, period]);
 
   useEffect(() => {
     async function loadPapers() {
       try {
         setLoading(true);
-        const task =
+        const selectedTask =
           selectedTag && selectedTag !== "All Topics"
             ? selectedTag.toLowerCase().replace(/\s+/g, "-")
             : undefined;
 
         const apiStartTime = performance.now();
-        const result = await getPapers({ page, task });
+        const result = await getPapers({
+          page,
+          ...filterParams,
+          task: selectedTask ?? filterParams?.task,
+          period,
+        });
         const apiDuration = performance.now() - apiStartTime;
         console.log(`[PaperList] API call completed in ${apiDuration.toFixed(2)}ms`);
 
         setHasMore(result.hasMore);
-        
+
         setPapers((prev) => {
           const existingSlugs = new Set(prev.map(p => p.slug));
           const newPapers = result.papers.filter(p => !existingSlugs.has(p.slug));
@@ -377,7 +388,7 @@ export default function PaperList({
       }
     }
     loadPapers();
-  }, [page, selectedTag]);
+  }, [page, selectedTag, filterParams, period]);
 
   if (error) {
     return (
