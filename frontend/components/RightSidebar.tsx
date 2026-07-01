@@ -6,8 +6,6 @@ import {
   Sparkles,
   Star,
   GitFork,
-  Heart,
-  MessageCircle,
   Loader2,
 } from "lucide-react";
 import { getDiscussions, type Discussion } from "@/lib/discussionApi"
@@ -22,14 +20,7 @@ function XIcon({ size = 14, className = "" }: { size?: number; className?: strin
   );
 }
 
-// Reddit icon
-function RedditIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="currentColor" className={className}>
-      <path d="M10 0C4.478 0 0 4.478 0 10c0 5.523 4.478 10 10 10 5.523 0 10-4.477 10-10 0-5.522-4.477-10-10-10zm4.908 3.958a1.042 1.042 0 110 2.084 1.042 1.042 0 010-2.084zm-9.1 2.506c.282 0 .557.044.817.127l1.547-2.327a.625.625 0 011.042.692l-1.44 2.166a3.335 3.335 0 011.559 2.828A3.335 3.335 0 0110 13.286a3.335 3.335 0 01-3.333-3.337c0-.47.098-.918.273-1.325l-1.47-2.21a.625.625 0 111.041-.693l1.396 2.1a3.316 3.316 0 01.901-.357zM10 8.333c-1.84 0-3.333 1.494-3.333 3.334S8.16 15 10 15c1.84 0 3.333-1.493 3.333-3.333S11.84 8.333 10 8.333zm-1.667 2.084a.833.833 0 110 1.666.833.833 0 010-1.666zm3.334 0a.833.833 0 110 1.666.833.833 0 010-1.666zm-3.75 2.5a.208.208 0 01.148.357c.559.558 1.65.601 1.934.601.284 0 1.375-.043 1.933-.601a.208.208 0 01.295.295C11.384 14.04 10.284 14.167 10 14.167c-.284 0-1.384-.127-1.731-.598a.208.208 0 01.148-.152z" />
-    </svg>
-  );
-}
+
 
 // GitHub icon
 function GithubIcon({ size = 14, className = "" }: { size?: number; className?: string }) {
