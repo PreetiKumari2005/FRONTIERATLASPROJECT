@@ -34,10 +34,12 @@ export default function Home() {
             <PaperTabs />
             <PaperList selectedTag={selectedTag} />
           </main>
-
-          <div className="hidden xl:block w-[280px] shrink-0 sticky top-4">
-            <RightSidebar />
-          </div>
+          
+          <div className="hidden xl:block w-[280px] shrink-0 self-start">
+  <div className="sticky top-4">
+    <RightSidebar />
+  </div>
+</div>
 
         </div>
       </div>
