@@ -74,7 +74,7 @@ export default function RightSidebar() {
         <div className="flex items-center gap-1 mb-5">
           <button 
             onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
               activeTab === "all" ? "bg-[#EBEBE6] text-[#F55036]" : "text-[#8B8B8B] hover:bg-[#EBEBE6] hover:text-[#111111]"
             }`}
           >
@@ -82,7 +82,7 @@ export default function RightSidebar() {
           </button>
           <button 
             onClick={() => setActiveTab("x")}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
               activeTab === "x" ? "bg-[#EBEBE6] text-[#F55036]" : "text-[#8B8B8B] hover:bg-[#EBEBE6] hover:text-[#111111]"
             }`}
           >
@@ -90,7 +90,7 @@ export default function RightSidebar() {
           </button>
           <button 
             onClick={() => setActiveTab("reddit")}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
               activeTab === "reddit" ? "bg-[#EBEBE6] text-[#F55036]" : "text-[#8B8B8B] hover:bg-[#EBEBE6] hover:text-[#111111]"
             }`}
           >
@@ -98,7 +98,7 @@ export default function RightSidebar() {
           </button>
           <button 
             onClick={() => setActiveTab("github")}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
               activeTab === "github" ? "bg-[#EBEBE6] text-[#F55036]" : "text-[#8B8B8B] hover:bg-[#EBEBE6] hover:text-[#111111]"
             }`}
           >
@@ -164,7 +164,7 @@ export default function RightSidebar() {
         </div>
 
         {/* Footer Button */}
-        <button className="w-full border border-[#E5E5E0] text-[#F55036] bg-white hover:border-[#F55036] hover:bg-[#F8F7F2] hover:text-[#E0462D] rounded-[8px] py-[10px] flex items-center justify-center gap-1.5 font-bold text-[12px] mt-2 transition-colors cursor-pointer">
+        <button className="w-full border border-[#E5E5E0] text-[#F55036] bg-white hover:border-[#F55036] hover:bg-[#F8F7F2] hover:text-[#E0462D] rounded-[8px] py-[10px] flex items-center justify-center gap-1.5 font-semibold text-[12px] mt-2 transition-colors cursor-pointer">
           View all discussions <ArrowRight size={14} strokeWidth={2.5} />
         </button>
 

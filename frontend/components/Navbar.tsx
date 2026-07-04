@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import Sidebar from "@/components/Sidebar";
 import SearchBar from "./SearchBar";
 
 export default function Navbar() {
   const router = useRouter();
-  const isHomePage = usePathname();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsMenuOpen(false);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
     };
 
     if (isMenuOpen) {
@@ -23,6 +25,7 @@ export default function Navbar() {
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
     }
+
     return () => {
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
@@ -38,7 +41,6 @@ export default function Navbar() {
   return (
     <>
       <nav className="h-[56px] lg:h-[52px] w-full bg-[#F8F7F2] border-b border-[#E5E5E0] flex items-center justify-between px-4 md:px-8 xl:px-12 gap-3 lg:gap-4 shrink-0 z-50">
-        {/* Left Section - Logo */}
         <div className="flex items-center gap-1 lg:gap-0 lg:w-[240px] shrink-0">
           <button
             onClick={() => setIsMenuOpen(true)}
@@ -74,22 +76,17 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Center - Spacer for alignment */}
         <div className="hidden lg:flex flex-1" />
 
-        {/* Right Section - Search Bar + Actions */}
         <div className="flex items-center gap-3 lg:gap-4 shrink-0">
-          {/* Search Bar - Desktop */}
           <div className="hidden lg:block w-[300px] xl:w-[340px]">
-            {isHomePage !== "/" && <SearchBar />}
+            {pathname !== "/" && <SearchBar />}
           </div>
 
-          {/* Submit Button */}
           <button className="hidden sm:flex bg-[#F55036] hover:bg-[#E0462D] text-white text-[12px] font-bold px-4 py-1.5 rounded-md transition-colors cursor-pointer border-none tracking-wide uppercase whitespace-nowrap">
             Submit
           </button>
 
-          {/* User Avatar - Desktop */}
           <div className="hidden lg:flex w-8 h-8 rounded-full bg-[#EBEBE6] items-center justify-center cursor-pointer hover:bg-[#DCDCD7] transition-colors">
             <svg
               width="14"
@@ -105,7 +102,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Right - Submit Button only */}
         <div className="flex lg:hidden items-center shrink-0">
           <button className="bg-[#F55036] hover:bg-[#E0462D] text-white text-[12px] font-bold px-4 py-2 rounded-md transition-colors cursor-pointer border-none tracking-wide uppercase min-h-[40px] whitespace-nowrap">
             Submit
@@ -113,7 +109,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       <div
         className={`fixed inset-0 bg-black/40 z-[60] lg:hidden transition-opacity duration-300 ${
           isMenuOpen
@@ -124,7 +119,6 @@ export default function Navbar() {
         aria-hidden="true"
       />
 
-      {/* Mobile Menu Drawer */}
       <div
         className={`fixed inset-y-0 left-0 w-[80vw] max-w-[300px] bg-[#F8F7F2] z-[70] shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"

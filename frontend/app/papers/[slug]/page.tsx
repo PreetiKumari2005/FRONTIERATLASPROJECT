@@ -13,50 +13,89 @@ import PaperDetail from "@/components/PaperDetail";
 function Skeleton() {
   return (
     <div className="min-h-screen bg-[#F8F7F2] text-[#111111]">
-      <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 xl:px-12 py-8 animate-pulse">
+      <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 xl:px-12 py-5 animate-pulse">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className="h-3 bg-[#E5E5E0] rounded w-10" />
+        <div className="flex items-center gap-2 mb-2">
+          <div className="h-2.5 bg-[#E5E5E0] rounded w-10" />
           <span className="text-[#E5E5E0]">/</span>
-          <div className="h-3 bg-[#E5E5E0] rounded w-48" />
+          <div className="h-2.5 bg-[#E5E5E0] rounded w-48" />
         </div>
 
-        {/* Title */}
-        <div className="h-10 bg-[#E5E5E0] rounded w-3/4 mb-3" />
-        <div className="h-10 bg-[#E5E5E0] rounded w-1/2 mb-4" />
-
-        {/* Author lines */}
-        <div className="flex gap-2 mb-6">
-          <div className="h-4 bg-[#E5E5E0] rounded w-32" />
-          <div className="h-4 bg-[#E5E5E0] rounded w-28" />
-          <div className="h-4 bg-[#E5E5E0] rounded w-24" />
-        </div>
-
-        {/* Metadata row */}
-        <div className="flex gap-4 mb-8">
-          <div className="h-4 bg-[#E5E5E0] rounded w-28" />
-          <div className="h-4 bg-[#E5E5E0] rounded w-24" />
-          <div className="h-4 bg-[#E5E5E0] rounded w-20" />
-        </div>
-
-        {/* Abstract skeleton */}
-        <div className="mb-8">
-          <div className="h-5 bg-[#E5E5E0] rounded w-24 mb-3" />
-          <div className="bg-white border border-[#E5E5E0] rounded-lg p-5 space-y-2">
-            <div className="h-3 bg-[#E5E5E0] rounded w-full" />
-            <div className="h-3 bg-[#E5E5E0] rounded w-full" />
-            <div className="h-3 bg-[#E5E5E0] rounded w-full" />
-            <div className="h-3 bg-[#E5E5E0] rounded w-3/4" />
-            <div className="h-3 bg-[#E5E5E0] rounded w-5/6" />
-            <div className="h-3 bg-[#E5E5E0] rounded w-2/3" />
+        {/* Hero skeleton: content + inline preview */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-5 mb-4 items-start">
+          <div>
+            <div className="h-10 bg-[#E5E5E0] rounded w-40 mb-4" />
+            <div className="h-10 bg-[#E5E5E0] rounded w-[88%] mb-3" />
+            <div className="h-10 bg-[#E5E5E0] rounded w-[72%] mb-4" />
+            <div className="h-3 bg-[#E5E5E0] rounded w-64 mb-2" />
+            <div className="flex gap-2 mb-4">
+              <div className="h-3 bg-[#E5E5E0] rounded w-20" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-24" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-28" />
+            </div>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <div className="h-9 bg-[#E5E5E0] rounded-full w-16" />
+              <div className="h-9 bg-[#E5E5E0] rounded-full w-20" />
+              <div className="h-9 bg-[#E5E5E0] rounded-full w-16" />
+              <div className="h-9 bg-[#E5E5E0] rounded-full w-20" />
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-4 border-t border-[#E5E5E0]">
+              <div className="h-16 bg-[#E5E5E0] rounded-lg" />
+              <div className="h-16 bg-[#E5E5E0] rounded-lg" />
+              <div className="h-16 bg-[#E5E5E0] rounded-lg" />
+              <div className="h-16 bg-[#E5E5E0] rounded-lg" />
+              <div className="h-16 bg-[#E5E5E0] rounded-lg" />
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <div className="h-3 bg-[#E5E5E0] rounded w-20 mb-2" />
+            <div className="aspect-[3/4] bg-[#E5E5E0] rounded-[22px]" />
           </div>
         </div>
 
-        {/* Tags skeleton */}
-        <div className="flex gap-2 mb-6">
-          <div className="h-7 bg-[#E5E5E0] rounded-full w-20" />
-          <div className="h-7 bg-[#E5E5E0] rounded-full w-24" />
-          <div className="h-7 bg-[#E5E5E0] rounded-full w-16" />
+        {/* Main content skeleton: 70/30 */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 lg:gap-5">
+          <div className="space-y-3">
+            <div>
+              <div className="h-3 bg-[#E5E5E0] rounded w-24 mb-2" />
+              <div className="bg-white border border-[#E5E5E0] rounded-lg p-3 space-y-2">
+                <div className="h-2.5 bg-[#E5E5E0] rounded w-full" />
+                <div className="h-2.5 bg-[#E5E5E0] rounded w-3/4" />
+              </div>
+            </div>
+            <div>
+              <div className="h-3 bg-[#E5E5E0] rounded w-20 mb-2" />
+              <div className="bg-white border border-[#E5E5E0] rounded-lg p-3 space-y-2">
+                <div className="h-2.5 bg-[#E5E5E0] rounded w-full" />
+                <div className="h-2.5 bg-[#E5E5E0] rounded w-full" />
+                <div className="h-2.5 bg-[#E5E5E0] rounded w-full" />
+                <div className="h-2.5 bg-[#E5E5E0] rounded w-5/6" />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              <div className="h-5 bg-[#E5E5E0] rounded-md w-16" />
+              <div className="h-5 bg-[#E5E5E0] rounded-md w-20" />
+              <div className="h-5 bg-[#E5E5E0] rounded-md w-14" />
+              <div className="h-5 bg-[#E5E5E0] rounded-md w-18" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="bg-white border border-[#E5E5E0] rounded-lg p-3 space-y-2">
+              <div className="h-2.5 bg-[#E5E5E0] rounded w-14" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-full" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-2/3" />
+            </div>
+            <div className="bg-white border border-[#E5E5E0] rounded-lg p-3 space-y-2">
+              <div className="h-2.5 bg-[#E5E5E0] rounded w-12" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-3/4" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-1/2" />
+            </div>
+            <div className="bg-white border border-[#E5E5E0] rounded-lg p-3 space-y-2">
+              <div className="h-2.5 bg-[#E5E5E0] rounded w-16" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-full" />
+              <div className="h-3 bg-[#E5E5E0] rounded w-5/6" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
