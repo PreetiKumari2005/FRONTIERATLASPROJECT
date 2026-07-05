@@ -5,7 +5,7 @@ export interface MethodCategory {
   id: string;
   name: string;
   iconName: string;
-  methods: { id: string; name: string }[];
+  methods: { id: string; name: string; slug?: string }[];
 }
 
 export function CategoryRow({ category }: { category: MethodCategory }) {
@@ -29,7 +29,7 @@ export function CategoryRow({ category }: { category: MethodCategory }) {
           return (
             <li key={method.id} className="shrink-0">
               <Link 
-                href={`/methods/${method.id}`}
+                href={`/methods/${method.slug ?? method.id}`}
                 className="inline-flex items-center justify-center rounded-full border border-[#E5E5E0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#555555] transition-all duration-300 ease-out hover:border-[#FF5A1F]/40 hover:bg-[#FFF7F3] hover:text-[#FF5A1F] hover:-translate-y-[2px] shadow-sm hover:shadow-md active:scale-95"
                 aria-label={`View details for ${method.name}`}
               >
