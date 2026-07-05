@@ -48,6 +48,7 @@ export interface MethodDetail {
   slug: string;
   paperCount: number;
   papers: MethodPaper[];
+  category?: string;
   categoryName?: string;
   categoryMethods?: { name: string; slug?: string }[];
   tasksJson?: { name: string; description?: string }[];

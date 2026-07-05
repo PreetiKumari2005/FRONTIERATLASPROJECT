@@ -2,8 +2,28 @@ import * as React from "react";
 import Link from "next/link";
 import { getMethodBySlug } from "@/lib/methods";
 import { FileText, ExternalLink } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import Navbar from "@/components/Navbar";
 import MethodFilteredPapers from "@/components/domain/methods/MethodFilteredPapers";
+
+const ICON_MAP: Record<string, string> = {
+  "General": "Settings",
+  "Language": "MessageSquare",
+  "Vision": "Eye",
+  "Audio & Speech": "Mic",
+  "Agents": "Bot",
+  "Reasoning": "Brain",
+  "Training": "Dumbbell",
+  "Optimization": "LineChart",
+  "Inference": "Zap",
+  "Retrieval": "Search",
+  "Reinforcement Learning": "Gamepad2",
+  "Diffusion & Generation": "Wand2",
+  "Multimodal": "Layers",
+  "Architectures": "Cpu",
+  "Evaluation": "CheckSquare",
+  "Embeddings": "Binary"
+};
 
 // ─── Category-specific SVG illustrations ───────────────────────────────────
 function CategorySVG({ category }: { category: string }) {
@@ -415,8 +435,11 @@ export default async function MethodDetailPage({
     );
   }
 
-  const categoryName = methodDetail.categoryName || "Methods";
+  const categoryName = methodDetail.category || methodDetail.categoryName || "Methods";
   const actualPaperCount = methodDetail.paperCount ?? methodDetail.papers?.length ?? 0;
+  
+  const iconName = ICON_MAP[categoryName] || "FileText";
+  const DynamicIcon = LucideIcons[iconName as keyof typeof LucideIcons] as React.ElementType || FileText;
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-slate-900 antialiased" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -437,7 +460,7 @@ export default async function MethodDetailPage({
           <div className="lg:col-span-7">
             <div className="flex items-center gap-2 text-[10px] font-bold text-orange-600 mb-3 lg:mb-4 tracking-widest uppercase">
               <div className="p-1 lg:p-1.5 bg-orange-50 lg:bg-transparent lg:border lg:border-orange-200 rounded lg:rounded-md">
-                <FileText className="w-4 h-4 lg:w-3 lg:h-3" strokeWidth={2.5} />
+                <DynamicIcon className="w-4 h-4 lg:w-3 lg:h-3" strokeWidth={2.5} />
               </div>
               Method
             </div>
@@ -453,7 +476,7 @@ export default async function MethodDetailPage({
             {/* Metrics Widget */}
             <div className="inline-flex items-center gap-4 bg-white border border-gray-100 rounded-xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
               <div className="bg-orange-50 p-3 rounded-lg mr-2 lg:mr-0">
-                <FileText className="w-6 h-6 lg:w-8 lg:h-8 text-orange-500" strokeWidth={1.5} />
+                <DynamicIcon className="w-6 h-6 lg:w-8 lg:h-8 text-orange-500" strokeWidth={1.5} />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Papers Using</div>
