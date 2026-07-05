@@ -28,12 +28,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
-// ============ Types ============
-interface NavItemData {
-  label: string;
-  icon: React.ReactNode;
-}
-
 interface SidebarProps {
   onItemClick?: () => void;
   onItemSelect?: (item: string) => void;
