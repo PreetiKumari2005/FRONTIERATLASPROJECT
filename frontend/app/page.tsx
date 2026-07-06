@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
@@ -38,8 +38,25 @@ RightSidebarSlot.displayName = "RightSidebarSlot";
 // ─── Homepage ─────────────────────────────────────────────────────────────
 export default function Home() {
   const [selectedTag, setSelectedTag] = useState<string | undefined>(undefined);
-  const [activeSort, setActiveSort] = useState<string>("Trending Papers");
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("Today");
+  const [activeSort, setActiveSort] = useState<string>("Latest Papers");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("All time");
+
+  // Stealthy Memory Check: Restore filters from sessionStorage if they exist
+  useEffect(() => {
+    const savedSort = sessionStorage.getItem("atlas_activeSort");
+    const savedPeriod = sessionStorage.getItem("atlas_selectedPeriod");
+    if (savedSort && savedSort !== "undefined" && savedSort !== "null") setActiveSort(savedSort);
+    if (savedPeriod && savedPeriod !== "undefined" && savedPeriod !== "null") setSelectedPeriod(savedPeriod);
+  }, []);
+
+  // Save user preferences to memory when they change
+  useEffect(() => {
+    sessionStorage.setItem("atlas_activeSort", activeSort);
+  }, [activeSort]);
+
+  useEffect(() => {
+    sessionStorage.setItem("atlas_selectedPeriod", selectedPeriod);
+  }, [selectedPeriod]);
   
   const filterParams = useMemo(() => {
     const isTask = ["Agents", "Reasoning", "Language Modeling", "Coding Agents", "Computer Use", "World Models", "Robotics"].includes(activeSort);
