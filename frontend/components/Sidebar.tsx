@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import {
-  Flame, Clock, Star, Bot, Zap,
+  Flame, Clock, Star, Bot, Zap, Trophy,
   FileText, ImageIcon, Video, Volume2,
   Beaker, ListChecks, Cpu, Database, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getMethods, type MethodItem } from "@/lib/methods";
 import { getTasks, type TaskItem } from "@/lib/tasks";
+import { getBenchmarks, type BenchmarkItem } from "@/lib/benchmarks";
 import { getModels, type ModelItem } from "@/lib/models";
 import { getDatasets, type DatasetItem } from "@/lib/datasets";
 import { getAuthors, type AuthorItem } from "@/lib/authors";
@@ -73,11 +74,13 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
   const pathname = usePathname();
   const [methodItems, setMethodItems] = useState<MethodItem[]>([]);
   const [taskItems, setTaskItems] = useState<TaskItem[]>([]);
+  const [benchmarkItems, setBenchmarkItems] = useState<BenchmarkItem[]>([]);
   const [modelItems, setModelItems] = useState<ModelItem[]>([]);
   const [datasetItems, setDatasetItems] = useState<DatasetItem[]>([]);
   const [authorItems, setAuthorItems] = useState<AuthorItem[]>([]);
   const [sidebarLoading, setSidebarLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(true);
+  const [benchmarksLoading, setBenchmarksLoading] = useState(true);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [datasetsLoading, setDatasetsLoading] = useState(true);
   const [authorsLoading, setAuthorsLoading] = useState(true);
@@ -87,18 +90,21 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
       try {
         setSidebarLoading(true);
         setTasksLoading(true);
+        setBenchmarksLoading(true);
         setModelsLoading(true);
         setDatasetsLoading(true);
         setAuthorsLoading(true);
-        const [methodsData, tasksData, modelsData, datasetsData, authorsData] = await Promise.all([
+        const [methodsData, tasksData, benchmarksData, modelsData, datasetsData, authorsData] = await Promise.all([
           getMethods({ sort: "name", limit: 50 }),
           getTasks(),
+          getBenchmarks(),
           getModels(),
           getDatasets(),
           getAuthors(),
         ]);
         setMethodItems(methodsData.methods);
         setTaskItems(tasksData);
+        setBenchmarkItems(benchmarksData.slice(0, 10)); // display top 10
         setModelItems(modelsData);
         setDatasetItems(datasetsData);
         setAuthorItems(authorsData);
@@ -107,6 +113,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
       } finally {
         setSidebarLoading(false);
         setTasksLoading(false);
+        setBenchmarksLoading(false);
         setModelsLoading(false);
         setDatasetsLoading(false);
         setAuthorsLoading(false);
@@ -174,6 +181,33 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
           )}
         </div>
 
+        <div className="flex flex-col">
+          <SectionLabel>BENCHMARKS</SectionLabel>
+          <NavItem
+            icon={<Trophy size={14} />}
+            label="All Benchmarks"
+            isActive={pathname === "/benchmarks"}
+            onClick={handleNavClick}
+            href="/benchmarks"
+          />
+          {benchmarksLoading ? (
+            <div className="px-3 py-2 mx-2">
+              <div className="h-3 bg-[#E5E5E0] rounded animate-pulse w-3/4" />
+            </div>
+          ) : (
+            benchmarkItems.map((b) => (
+              <NavItem
+                key={b.id}
+                icon={<Trophy size={14} />}
+                label={b.name}
+                isActive={pathname === `/benchmarks/${b.slug}`}
+                onClick={handleNavClick}
+                href={`/benchmarks/${b.slug}`}
+              />
+            ))
+          )}
+        </div>
+        
         <div className="flex flex-col">
           <SectionLabel>METHODS</SectionLabel>
           <NavItem

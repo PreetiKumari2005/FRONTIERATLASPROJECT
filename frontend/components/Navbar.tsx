@@ -13,6 +13,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const isMethodsActive = pathname.startsWith("/methods");
   const isTasksActive = pathname.startsWith("/tasks");
+  const isBenchmarksActive = pathname.startsWith("/benchmarks");
   const isModelsActive = pathname.startsWith("/models");
   const isDatasetsActive = pathname.startsWith("/datasets");
   const isAuthorsActive = pathname.startsWith("/authors");
@@ -87,6 +88,17 @@ export default function Navbar() {
             )}
           >
             Methods
+          </Link>
+          <Link
+            href="/benchmarks"
+            className={cn(
+              "text-[13px] font-medium transition-colors no-underline",
+              isBenchmarksActive
+                ? "text-[#F55036] font-bold"
+                : "text-[#555555] hover:text-[#F55036]"
+            )}
+          >
+            Benchmarks
           </Link>
           <Link
             href="/models"

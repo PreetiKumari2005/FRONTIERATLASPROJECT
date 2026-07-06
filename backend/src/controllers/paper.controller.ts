@@ -43,6 +43,7 @@ export const getPapers = async (c: Context) => {
       data: result
     }, 200);
   } catch (error: any) {
+    console.error("Error in getPapers controller:", error);
     return c.json({ 
       status: "error", 
       detail: error.message, 

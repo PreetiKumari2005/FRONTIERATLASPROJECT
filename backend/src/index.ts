@@ -4,6 +4,8 @@ import { env } from "hono/adapter";
 import { PrismaClient } from "./generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 import authRoutes from "./routes/auth.routes.js";
 import paperRoutes from "./routes/paper.routes.js";
@@ -12,6 +14,7 @@ import modelRoutes from "./routes/model.routes.js";
 import datasetRoutes from "./routes/dataset.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 import methodRoutes from "./routes/method.routes.js";
+import benchmarkRoutes from "./routes/benchmark.routes.js";
 
 // 1. Define BOTH Environment Bindings and Context Variables
 type Env = {
@@ -47,16 +50,35 @@ app.use("*", async (c, next) => {
   // Strip quotes if they were included in the .dev.vars file
   const cleanUrl = DATABASE_URL ? DATABASE_URL.replace(/^"|"$/g, "") : "";
 
-  // Configure WebSocket for Cloudflare Workers environment
-  neonConfig.webSocketConstructor = WebSocket;
+  const isNeon = cleanUrl.includes("neon.tech");
+  let prisma: PrismaClient;
+  let pool: Pool | null = null;
 
-  // PrismaNeon v7.8 takes a PoolConfig object — it creates the Pool internally
-  const adapter = new PrismaNeon({ connectionString: cleanUrl });
-  const prisma = new PrismaClient({ adapter });
+  if (isNeon) {
+    // Configure WebSocket for Cloudflare Workers environment
+    neonConfig.webSocketConstructor = WebSocket;
+
+    // PrismaNeon v7.8 takes a PoolConfig object — it creates the Pool internally
+    const adapter = new PrismaNeon({ connectionString: cleanUrl });
+    prisma = new PrismaClient({ adapter });
+  } else {
+    // Use standard pg Pool for local PostgreSQL connection
+    pool = new Pool({ connectionString: cleanUrl });
+    const adapter = new PrismaPg(pool);
+    prisma = new PrismaClient({ adapter });
+  }
 
   c.set("prisma", prisma);
 
-  await next();
+  try {
+    await next();
+  } finally {
+    // Clean up Prisma connections and close local pools to avoid leaks
+    await prisma.$disconnect();
+    if (pool) {
+      await pool.end();
+    }
+  }
 });
 
 // Register Routes
@@ -75,5 +97,6 @@ app.route("/api/v1/models", modelRoutes);
 app.route("/api/v1/datasets", datasetRoutes);
 app.route("/api/v1/tasks", taskRoutes);
 app.route("/api/v1/methods", methodRoutes);
+app.route("/api/v1/benchmarks", benchmarkRoutes);
 
 export default app;

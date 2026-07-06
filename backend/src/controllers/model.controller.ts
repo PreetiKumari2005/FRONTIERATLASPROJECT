@@ -10,6 +10,7 @@ export const getModels = async (c: Context) => {
     const models = await modelService.getModels(prisma, limit, skip);
     return c.json({ status: "success", count: models.length, data: models }, 200);
   } catch (error: any) {
+    console.error("Error in getModels controller:", error);
     return c.json({ status: "error", detail: error.message }, 500);
   }
 };
