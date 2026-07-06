@@ -49,6 +49,7 @@ export default function SearchBar({
     }
   }, []);
 
+  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.trim()) {
@@ -61,12 +62,14 @@ export default function SearchBar({
     return () => clearTimeout(timer);
   }, [query, fetchSuggestions]);
 
+  // Auto-focus
   useEffect(() => {
     if (autoFocus && inputRef.current) {
       inputRef.current.focus();
     }
   }, [autoFocus]);
 
+  // Click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -108,8 +111,10 @@ export default function SearchBar({
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
           const suggestion = suggestions[selectedIndex];
-          router.push(`/${suggestion.type === 'papers' ? 'papers' : suggestion.type}/${suggestion.slug}`);
+          const href = `/${suggestion.type === 'papers' ? 'papers' : suggestion.type}/${suggestion.slug}`;
+          router.push(href);
           setShowSuggestions(false);
+          setSelectedIndex(-1);
         } else {
           handleSubmit(e);
         }
@@ -142,8 +147,11 @@ export default function SearchBar({
       models: "Model",
       datasets: "Dataset",
     };
-    return labels[type];
+    return labels[type] || "Result";
   };
+
+  // Determine if we should show suggestions
+  const shouldShowSuggestions = showSuggestions && suggestions.length > 0;
 
   return (
     <div ref={containerRef} className={`relative ${variant === "compact" ? "w-full max-w-[400px]" : "w-full max-w-[600px] mx-auto"}`}>
@@ -178,12 +186,24 @@ export default function SearchBar({
           aria-label="Search"
           aria-autocomplete="list"
           aria-controls="search-suggestions"
+          aria-expanded={shouldShowSuggestions}
+          aria-activedescendant={selectedIndex >= 0 ? `suggestion-${selectedIndex}` : undefined}
         />
+
+        {/* Loading Spinner */}
+        {loading && (
+          <Loader2
+            size={variant === "compact" ? 16 : 18}
+            className="absolute right-10 top-1/2 -translate-y-1/2 text-[#F55036] animate-spin"
+          />
+        )}
+
+        {/* Clear Button */}
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B8B8B] hover:text-[#111111] transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B8B8B] hover:text-[#111111] transition-colors p-1 rounded-full hover:bg-[#F5F5F0]"
             aria-label="Clear search"
           >
             <X size={variant === "compact" ? 16 : 18} />
@@ -197,11 +217,31 @@ export default function SearchBar({
         )}
       </motion.form>
 
-      {showSuggestions && suggestions.length > 0 && (
-        <ul
+      {/* Suggestions Dropdown */}
+      {shouldShowSuggestions && (
+        <motion.ul
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -5 }}
+          transition={{ duration: 0.15 }}
           id="search-suggestions"
           role="listbox"
-          className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#E5E5E0] rounded-lg shadow-lg z-50 max-h-[400px] overflow-y-auto"
+          className="
+            absolute 
+            top-full 
+            left-0 
+            right-0 
+            mt-1 lg:mt-2 
+            bg-white 
+            border border-[#E5E5E0] 
+            rounded-lg 
+            shadow-lg 
+            z-50 
+            max-h-[300px] lg:max-h-[400px] 
+            overflow-y-auto
+            overflow-x-hidden
+            py-1
+          "
         >
           {suggestions.map((suggestion, index) => {
             const href = `/${suggestion.type === 'papers' ? 'papers' : suggestion.type}/${suggestion.slug}`;

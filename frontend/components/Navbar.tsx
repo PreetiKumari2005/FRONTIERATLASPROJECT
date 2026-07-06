@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
@@ -21,9 +20,12 @@ export default function Navbar({
 
 
 
+  // Close menu on escape key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsMenuOpen(false);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
     };
 
     if (isMenuOpen) {
@@ -33,6 +35,7 @@ export default function Navbar({
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
     }
+
     return () => {
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
@@ -54,15 +57,47 @@ export default function Navbar({
             aria-expanded={isMenuOpen}
             className="xl:hidden w-10 h-10 flex items-center justify-center rounded-md hover:bg-[#EBEBE6] transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round">
-              <line x1="4" y1="6" x2="20" y2="6"/>
-              <line x1="4" y1="12" x2="20" y2="12"/>
-              <line x1="4" y1="18" x2="20" y2="18"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#111111"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="18" x2="20" y2="18" />
             </svg>
           </button>
           <div className="flex items-center cursor-pointer relative w-[140px] xl:w-[160px] h-8 xl:h-9">
             <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-left" sizes="(max-width: 1280px) 140px, 160px" />
           </div>
+
+          {/* Desktop Navigation Links - Left Side */}
+          <ul role="list" className="hidden xl:flex items-center gap-6 text-[14px] font-medium text-[#111111] m-0 p-0 list-none ml-2">
+            {navItems.map(({ label, href }) => {
+              const isActive = href !== "#" && pathname.startsWith(href);
+              return (
+                <li key={label} className="relative flex flex-col items-center gap-0.5">
+                  <Link
+                    href={href}
+                    className={`transition-colors duration-200 ${
+                      isActive
+                        ? "text-[#F55036] font-semibold"
+                        : "hover:text-[#F55036]"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                  {isActive && (
+                    <span className="absolute -bottom-[14px] w-1 h-1 rounded-full bg-[#F55036]" />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
         {/* Center — Search (Desktop) */}
@@ -136,22 +171,38 @@ export default function Navbar({
         aria-modal="true"
         aria-label="Mobile navigation"
       >
+        {/* Drawer Header */}
         <div className="h-[52px] border-b border-[#E5E5E0] flex items-center justify-between px-4 shrink-0">
           <div className="relative w-[120px] h-6">
-            <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-left" sizes="120px" />
+            <Image
+              src="/logo.png"
+              alt="Frontier Atlas"
+              fill
+              className="object-contain object-left"
+              sizes="120px"
+            />
           </div>
-          <button 
-             onClick={closeMenu}
-             aria-label="Close menu"
-             className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-[#EBEBE6] transition-colors -mr-2"
-           >
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-             </svg>
+          <button
+            onClick={closeMenu}
+            aria-label="Close menu"
+            className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-[#EBEBE6] transition-colors -mr-2"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#111111"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
-        
+
+        {/* Drawer Content */}
         <div className="flex-1 overflow-y-auto py-2">
           <Sidebar initialActive={activeSort} onItemSelect={onItemSelect} onItemClick={closeMenu} />
         </div>
