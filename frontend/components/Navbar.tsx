@@ -96,7 +96,7 @@ export default function Navbar({
             {[
               { label: "Explore",  href: "#" },
               { label: "Rankings", href: "#" },
-              { label: "Tasks",    href: "#" },
+              { label: "Tasks",    href: "/tasks" },
               { label: "Methods",  href: "/methods" },
               { label: "About",    href: "#" },
             ].map(({ label, href }) => {
