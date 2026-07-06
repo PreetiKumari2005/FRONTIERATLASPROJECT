@@ -111,6 +111,7 @@ app.use("*", async (c, next) => {
     if (pool) {
       await pool.end();
     }
+    await databaseManager.disconnectAll();
   }
 });
 
