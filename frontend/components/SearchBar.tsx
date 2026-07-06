@@ -279,7 +279,7 @@ export default function SearchBar({
             </li>
             );
           })}
-        </ul>
+        </motion.ul>
       )}
     </div>
   );

@@ -245,54 +245,7 @@ const Metric = memo(({
 });
 Metric.displayName = "Metric";
 
-/* ─── Paper Card Skeleton ────────────────────────────────────────────────── */
-function PaperCardSkeleton() {
-  return (
-    <div className="flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent animate-pulse">
-      {/* Thumbnail placeholder */}
-      <div className="w-full xl:w-[170px] h-[180px] sm:h-[220px] xl:h-[240px] shrink-0 bg-[#F8F7F2] rounded-md xl:rounded-none border border-[#E5E5E0]" />
 
-      {/* Content placeholder */}
-      <div className="flex-1 min-w-0 flex flex-col xl:pr-8 gap-3 pt-1">
-        {/* Title lines */}
-        <div className="h-5 w-3/4 bg-[#F8F7F2] rounded-md" />
-        <div className="h-5 w-1/2 bg-[#F8F7F2] rounded-md" />
-        {/* Authors */}
-        <div className="h-3.5 w-2/5 bg-[#F8F7F2] rounded" />
-        {/* Description */}
-        <div className="flex flex-col gap-2 mt-1">
-          <div className="h-3 w-full bg-[#F8F7F2] rounded" />
-          <div className="h-3 w-full bg-[#F8F7F2] rounded" />
-          <div className="h-3 w-4/5 bg-[#F8F7F2] rounded" />
-        </div>
-        {/* Tags */}
-        <div className="flex gap-2 mt-1">
-          <div className="h-6 w-16 bg-[#F8F7F2] rounded-full border border-[#E5E5E0]" />
-          <div className="h-6 w-20 bg-[#F8F7F2] rounded-full border border-[#E5E5E0]" />
-          <div className="h-6 w-14 bg-[#F8F7F2] rounded-full border border-[#E5E5E0]" />
-        </div>
-      </div>
-
-      {/* Metrics placeholder */}
-      <div className="shrink-0 flex items-center xl:items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] pt-4 xl:pt-0 w-full xl:w-auto">
-        <div className="flex flex-row xl:flex-col justify-around items-center w-full xl:w-[64px] xl:py-2 gap-4 xl:gap-0">
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="h-4 w-8 bg-[#F8F7F2] rounded" />
-            <div className="h-2.5 w-10 bg-[#F8F7F2] rounded" />
-          </div>
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="h-4 w-8 bg-[#F8F7F2] rounded" />
-            <div className="h-2.5 w-10 bg-[#F8F7F2] rounded" />
-          </div>
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="h-4 w-8 bg-[#F8F7F2] rounded" />
-            <div className="h-2.5 w-10 bg-[#F8F7F2] rounded" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ─── Paper Card ─────────────────────────────────────────────────────────── */
 const PaperCard = memo(({ paper }: { paper: Paper }) => {
@@ -473,34 +426,8 @@ export default function PaperList({
     if (cached) {
       return Promise.resolve(cached);
     }
-
-  // Track page load performance
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[PaperList] Page ${page} selectedTag="${selectedTag}" start loading papers count:`, papers.length);
-    }
-    const startTime = performance.now();
-    const endLoad = () => {
-      const duration = performance.now() - startTime;
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[PaperList] Load complete in ${duration.toFixed(2)}ms`);
-      }
-    };
-    endLoad();
-  }, [page, selectedTag, filterParams, period, papers.length]);
-
-  // Handle scroll logic
-  const handleScroll = useCallback(() => {
-    const scrollContainer = document.getElementById("scroll-container") as HTMLElement;
-    if (!scrollContainer) return;
-
-    const nearBottom =
-      scrollContainer.scrollTop + scrollContainer.clientHeight >=
-      scrollContainer.scrollHeight - 500;
-
-    if (nearBottom && !loading && hasMore) {
-      if (process.env.NODE_ENV === "development") console.log(`[PaperList] Near bottom, loading page ${page + 1}`);
-      setPage((prev) => prev + 1);
+    if (inFlightRef.current.has(key)) {
+      return inFlightRef.current.get(key)!;
     }
 
     const request = getPapers({

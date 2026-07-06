@@ -424,7 +424,6 @@ export default function Sidebar({
             </p>
           </div>
         </div>
-      </div>
     </aside>
   );
 }
