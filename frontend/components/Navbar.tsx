@@ -81,29 +81,6 @@ export default function Navbar({
             <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-left" sizes="(max-width: 1280px) 140px, 160px" />
           </div>
 
-          {/* Desktop Navigation Links - Left Side */}
-          <ul role="list" className="hidden xl:flex items-center gap-6 text-[14px] font-medium text-[#111111] m-0 p-0 list-none ml-2">
-            {navItems.map(({ label, href }) => {
-              const isActive = href !== "#" && pathname.startsWith(href);
-              return (
-                <li key={label} className="relative flex flex-col items-center gap-0.5">
-                  <Link
-                    href={href}
-                    className={`transition-colors duration-200 ${
-                      isActive
-                        ? "text-[#F55036] font-semibold"
-                        : "hover:text-[#F55036]"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                  {isActive && (
-                    <span className="absolute -bottom-[14px] w-1 h-1 rounded-full bg-[#F55036]" />
-                  )}
-                </li>
-              );
-            })}
-          </ul>
         </div>
 
         {/* Center — Search (Desktop) */}
