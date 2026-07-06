@@ -33,6 +33,7 @@ export interface GetPapersParams {
   page?: number;
   task?: string;
   method?: string;
+  model?: string;
   sort?: 'trending' | 'latest' | string;
   period?: 'today' | 'week' | 'month' | 'all' | string;
   limit?: number;
@@ -123,6 +124,7 @@ export async function getPapers(params: GetPapersParams = {}): Promise<GetPapers
     if (params.limit !== undefined) query.append("limit", params.limit.toString());
     if (params.task) query.append("task", params.task);
     if (params.method) query.append("method", params.method);
+    if (params.model) query.append("model", params.model);
     if (params.sort) query.append("sort", params.sort);
     if (params.period) query.append("period", params.period);
 
