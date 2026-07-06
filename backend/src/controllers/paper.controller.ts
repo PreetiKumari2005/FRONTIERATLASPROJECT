@@ -8,6 +8,17 @@ export const ingestPaper = async (c: Context) => {
 
   try {
     const newPaper = await paperService.ingestPaper(prisma, body.content);
+    const redis = redisManager.getClient();
+
+try {
+  const keys = await redis.keys("papers:*");
+
+  if (keys.length > 0) {
+    await redis.del(...keys);
+  }
+} catch (err) {
+  console.error("Redis cache invalidation failed:", err);
+}
     return c.json({
       status: "success",
       message: "Paper successfully written via Prisma Neon Adapter",
@@ -42,12 +53,18 @@ export const getPapers = async (c: Context) => {
     limit,
   })}`;
 
-  const cached = await redis.get(cacheKey);
+  let cached = null;
 
-  if (cached) {
+try {
+    cached = await redis.get(cacheKey);
+} catch (err) {
+    console.error("Redis GET failed:", err);
+}
+
+if (cached) {
     console.log("✅ CACHE HIT");
     return c.json(cached as any, 200);
-  }
+}
 
   console.log("❌ CACHE MISS");
     const result = await paperService.getPapers(prisma, {
@@ -66,9 +83,13 @@ export const getPapers = async (c: Context) => {
   data: result,
 };
 
-await redis.set(cacheKey, response, {
-  ex: 300, // 5 minutes
-});
+try {
+    await redis.set(cacheKey, response, {
+        ex: 300,
+    });
+} catch (err) {
+    console.error("Redis SET failed:", err);
+}
 
 return c.json(response, 200);
 
@@ -88,11 +109,44 @@ export const getPaperBySlug = async (c: Context) => {
   const slug = c.req.param('slug') as string;
 
   try {
+    const redis = redisManager.getClient();
+
+const cacheKey = `paper:${slug}`;
+
+let cached = null;
+
+try {
+    cached = await redis.get(cacheKey);
+} catch (err) {
+    console.error("Redis GET failed:", err);
+}
+
+if (cached) {
+    console.log("✅ PAPER CACHE HIT");
+    return c.json(cached as any, 200);
+}
+
+console.log("❌ PAPER CACHE MISS");
     const paper = await paperService.getPaperBySlug(prisma, slug);
-    if (!paper) {
-      return c.json({ status: "error", message: "Paper not found" }, 404);
-    }
-    return c.json({ status: "success", data: paper }, 200);
+
+if (!paper) {
+  return c.json({ status: "error", message: "Paper not found" }, 404);
+}
+
+const response = {
+  status: "success",
+  data: paper,
+};
+
+try {
+    await redis.set(cacheKey, response, {
+        ex: 300,
+    });
+} catch (err) {
+    console.error("Redis SET failed:", err);
+}
+
+return c.json(response, 200);
   } catch (error: any) {
     return c.json({ status: "error", detail: error.message }, 500);
   }
@@ -105,6 +159,19 @@ export const updatePaper = async (c: Context) => {
 
   try {
     const updatedPaper = await paperService.updatePaper(prisma, slug, body);
+    const redis = redisManager.getClient();
+
+try {
+  await redis.del(`paper:${slug}`);
+
+  const keys = await redis.keys("papers:*");
+
+  if (keys.length > 0) {
+    await redis.del(...keys);
+  }
+} catch (err) {
+  console.error("Redis cache invalidation failed:", err);
+}
     return c.json({ status: "success", data: updatedPaper }, 200);
   } catch (error: any) {
     return c.json({ status: "error", detail: error.message }, 500);
@@ -117,6 +184,19 @@ export const deletePaper = async (c: Context) => {
 
   try {
     await paperService.deletePaper(prisma, slug);
+    const redis = redisManager.getClient();
+
+try {
+  await redis.del(`paper:${slug}`);
+
+  const keys = await redis.keys("papers:*");
+
+  if (keys.length > 0) {
+    await redis.del(...keys);
+  }
+} catch (err) {
+  console.error("Redis cache invalidation failed:", err);
+}
     return c.json({ status: "success", message: "Paper deleted" }, 200);
   } catch (error: any) {
     return c.json({ status: "error", detail: error.message }, 500);
