@@ -154,39 +154,34 @@ export default function SearchBar({
   const shouldShowSuggestions = showSuggestions && suggestions.length > 0;
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={`relative ${variant === "compact" ? "w-full max-w-[400px]" : "w-full max-w-[600px] mx-auto"}`}>
       <motion.form
         layoutId={layoutIdPrefix ? `${layoutIdPrefix}-container` : undefined}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
         onSubmit={handleSubmit}
-        className={`relative flex items-center bg-white border border-[#E5E5E0] focus-within:border-[#F55036] focus-within:ring-2 focus-within:ring-[#F55036]/20 transition-all ${
+        className={`relative flex items-center px-3 md:px-4 bg-white border border-[#E5E5E0] focus-within:border-[#DCDCD7] focus-within:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all ${
           variant === "compact" ? "rounded-[20px]" : "rounded-[24px]"
         }`}
       >
-        {/* Search Icon */}
         <motion.div 
           layoutId={layoutIdPrefix ? `${layoutIdPrefix}-icon` : undefined}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="flex items-center text-[#737373] ml-3 shrink-0"
+          className="flex items-center text-[#737373] mr-2 shrink-0"
         >
           <Search size={variant === "compact" ? 16 : 18} />
         </motion.div>
-
-        {/* Input */}
         <motion.input
           layoutId={layoutIdPrefix ? `${layoutIdPrefix}-input` : undefined}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          ref={inputRef}
+          ref={inputRef as any}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className={`bg-transparent outline-none flex-1 text-[#111111] placeholder:text-[#737373] min-w-0 px-2 ${
-            variant === "compact" 
-              ? "h-9 text-[12px]" 
-              : "h-10 lg:h-11 text-[13px] lg:text-[14px]"
+          className={`bg-transparent outline-none flex-1 text-[#111111] placeholder:text-[#737373] min-w-0 pr-10 ${
+            variant === "compact" ? "h-9 text-[12px]" : "h-10 text-[13px]"
           }`}
           aria-label="Search"
           aria-autocomplete="list"
@@ -213,6 +208,12 @@ export default function SearchBar({
           >
             <X size={variant === "compact" ? 16 : 18} />
           </button>
+        )}
+        {loading && (
+          <Loader2
+            size={variant === "compact" ? 16 : 18}
+            className="absolute right-10 top-1/2 -translate-y-1/2 text-[#8B8B8B] animate-spin"
+          />
         )}
       </motion.form>
 
@@ -244,49 +245,41 @@ export default function SearchBar({
         >
           {suggestions.map((suggestion, index) => {
             const href = `/${suggestion.type === 'papers' ? 'papers' : suggestion.type}/${suggestion.slug}`;
-            const isSelected = index === selectedIndex;
-            
             return (
-              <li
-                key={`${suggestion.type}-${suggestion.id}`}
-                id={`suggestion-${index}`}
-                role="option"
-                aria-selected={isSelected}
-                className={`border-b border-[#EBEBE6] last:border-b-0 ${
-                  isSelected ? "bg-[#F8F7F2]" : "hover:bg-[#F8F7F2]"
-                }`}
+            <li
+              key={`${suggestion.type}-${suggestion.id}`}
+              role="option"
+              aria-selected={index === selectedIndex}
+              className={`border-b border-[#EBEBE6] last:border-b-0 ${
+                index === selectedIndex
+                  ? "bg-[#F8F7F2]"
+                  : "hover:bg-[#F8F7F2]"
+              }`}
+            >
+              <Link 
+                href={href}
+                onClick={() => setShowSuggestions(false)}
+                className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors block w-full h-full"
               >
-                <Link
-                  href={href}
-                  onClick={() => {
-                    setShowSuggestions(false);
-                    setSelectedIndex(-1);
-                  }}
-                  className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors block w-full h-full"
-                >
-                  <span className="text-lg shrink-0 mt-0.5">
-                    {getSuggestionIcon(suggestion.type)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5 lg:gap-2">
-                      <span className="text-[13px] lg:text-[14px] font-medium text-[#111111] truncate">
-                        {suggestion.title}
-                      </span>
-                      <span className="text-[9px] lg:text-[10px] font-medium text-[#8B8B8B] uppercase tracking-wide shrink-0 bg-[#F5F5F0] px-1.5 py-0.5 rounded">
-                        {getSuggestionTypeLabel(suggestion.type)}
-                      </span>
-                    </div>
-                    {suggestion.subtitle && (
-                      <p className="text-[11px] lg:text-[12px] text-[#555555] mt-0.5 truncate">
-                        {suggestion.subtitle}
-                      </p>
-                    )}
+                <span className="text-lg shrink-0">{getSuggestionIcon(suggestion.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14px] font-medium text-[#111111] truncate">
+                      {suggestion.title}
+                    </span>
+                    <span className="text-[10px] font-medium text-[#8B8B8B] uppercase tracking-wide shrink-0">
+                      {getSuggestionTypeLabel(suggestion.type)}
+                    </span>
                   </div>
-                </Link>
-              </li>
+                  {suggestion.subtitle && (
+                    <p className="text-[12px] text-[#555555] mt-0.5">{suggestion.subtitle}</p>
+                  )}
+                </div>
+              </Link>
+            </li>
             );
           })}
-        </motion.ul>
+        </ul>
       )}
     </div>
   );

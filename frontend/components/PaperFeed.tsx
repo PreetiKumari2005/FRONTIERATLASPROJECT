@@ -140,16 +140,13 @@ function getTitleColors(title: string): { bg1: string; bg2: string; accent: stri
 
 function GeneratedCover({ title }: { title: string }) {
   const { bg1, bg2, accent } = getTitleColors(title);
+  // Break title into 2-line display (max ~22 chars per line)
   const words = (title || "Untitled").split(" ");
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
-    if ((cur + " " + w).trim().length > 20 && cur) { 
-      lines.push(cur.trim()); 
-      cur = w; 
-    } else {
-      cur = (cur + " " + w).trim();
-    }
+    if ((cur + " " + w).trim().length > 20 && cur) { lines.push(cur.trim()); cur = w; }
+    else cur = (cur + " " + w).trim();
     if (lines.length === 3) break;
   }
   if (cur && lines.length < 3) lines.push(cur.trim());
@@ -164,12 +161,17 @@ function GeneratedCover({ title }: { title: string }) {
         </linearGradient>
       </defs>
       <rect width="170" height="240" fill="url(#bg)"/>
+      <!-- accent bar top -->
       <rect x="0" y="0" width="170" height="4" fill="${accent}"/>
+      <!-- decorative circles -->
       <circle cx="140" cy="50" r="55" fill="${accent}" fill-opacity="0.07"/>
       <circle cx="30" cy="200" r="40" fill="${accent}" fill-opacity="0.06"/>
+      <!-- arxiv label -->
       <rect x="12" y="16" width="42" height="14" rx="3" fill="${accent}" fill-opacity="0.9"/>
       <text x="33" y="27" font-family="monospace" font-size="8" fill="white" text-anchor="middle">arXiv</text>
+      <!-- title lines -->
       ${displayLines.map((line, i) => `<text x="12" y="${105 + i * 18}" font-family="Arial,sans-serif" font-size="11" font-weight="bold" fill="white" fill-opacity="0.95">${line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}</text>`).join("")}
+      <!-- bottom accent bar -->
       <rect x="12" y="210" width="30" height="3" rx="1.5" fill="${accent}"/>
     </svg>
   `;
@@ -242,6 +244,55 @@ const Metric = memo(({
   );
 });
 Metric.displayName = "Metric";
+
+/* ─── Paper Card Skeleton ────────────────────────────────────────────────── */
+function PaperCardSkeleton() {
+  return (
+    <div className="flex flex-col xl:flex-row gap-4 xl:gap-6 p-4 xl:py-6 xl:px-6 border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] bg-white xl:bg-transparent animate-pulse">
+      {/* Thumbnail placeholder */}
+      <div className="w-full xl:w-[170px] h-[180px] sm:h-[220px] xl:h-[240px] shrink-0 bg-[#F8F7F2] rounded-md xl:rounded-none border border-[#E5E5E0]" />
+
+      {/* Content placeholder */}
+      <div className="flex-1 min-w-0 flex flex-col xl:pr-8 gap-3 pt-1">
+        {/* Title lines */}
+        <div className="h-5 w-3/4 bg-[#F8F7F2] rounded-md" />
+        <div className="h-5 w-1/2 bg-[#F8F7F2] rounded-md" />
+        {/* Authors */}
+        <div className="h-3.5 w-2/5 bg-[#F8F7F2] rounded" />
+        {/* Description */}
+        <div className="flex flex-col gap-2 mt-1">
+          <div className="h-3 w-full bg-[#F8F7F2] rounded" />
+          <div className="h-3 w-full bg-[#F8F7F2] rounded" />
+          <div className="h-3 w-4/5 bg-[#F8F7F2] rounded" />
+        </div>
+        {/* Tags */}
+        <div className="flex gap-2 mt-1">
+          <div className="h-6 w-16 bg-[#F8F7F2] rounded-full border border-[#E5E5E0]" />
+          <div className="h-6 w-20 bg-[#F8F7F2] rounded-full border border-[#E5E5E0]" />
+          <div className="h-6 w-14 bg-[#F8F7F2] rounded-full border border-[#E5E5E0]" />
+        </div>
+      </div>
+
+      {/* Metrics placeholder */}
+      <div className="shrink-0 flex items-center xl:items-stretch xl:pl-[24px] xl:pr-[32px] border-t xl:border-t-0 xl:border-l border-[#E5E5E0] pt-4 xl:pt-0 w-full xl:w-auto">
+        <div className="flex flex-row xl:flex-col justify-around items-center w-full xl:w-[64px] xl:py-2 gap-4 xl:gap-0">
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="h-4 w-8 bg-[#F8F7F2] rounded" />
+            <div className="h-2.5 w-10 bg-[#F8F7F2] rounded" />
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="h-4 w-8 bg-[#F8F7F2] rounded" />
+            <div className="h-2.5 w-10 bg-[#F8F7F2] rounded" />
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="h-4 w-8 bg-[#F8F7F2] rounded" />
+            <div className="h-2.5 w-10 bg-[#F8F7F2] rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ─── Paper Card ─────────────────────────────────────────────────────────── */
 const PaperCard = memo(({ paper }: { paper: Paper }) => {
@@ -423,9 +474,33 @@ export default function PaperList({
       return Promise.resolve(cached);
     }
 
-    const inFlight = inFlightRef.current.get(key);
-    if (inFlight) {
-      return inFlight;
+  // Track page load performance
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[PaperList] Page ${page} selectedTag="${selectedTag}" start loading papers count:`, papers.length);
+    }
+    const startTime = performance.now();
+    const endLoad = () => {
+      const duration = performance.now() - startTime;
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[PaperList] Load complete in ${duration.toFixed(2)}ms`);
+      }
+    };
+    endLoad();
+  }, [page, selectedTag, filterParams, period, papers.length]);
+
+  // Handle scroll logic
+  const handleScroll = useCallback(() => {
+    const scrollContainer = document.getElementById("scroll-container") as HTMLElement;
+    if (!scrollContainer) return;
+
+    const nearBottom =
+      scrollContainer.scrollTop + scrollContainer.clientHeight >=
+      scrollContainer.scrollHeight - 500;
+
+    if (nearBottom && !loading && hasMore) {
+      if (process.env.NODE_ENV === "development") console.log(`[PaperList] Near bottom, loading page ${page + 1}`);
+      setPage((prev) => prev + 1);
     }
 
     const request = getPapers({
@@ -512,36 +587,39 @@ export default function PaperList({
 
   // Infinite scroll with Intersection Observer
   useEffect(() => {
-    if (!hasMore || loading || papers.length === 0) return;
+    async function loadPapers() {
+      try {
+        setLoading(true);
+        const selectedTask =
+          selectedTag && selectedTag !== "All Topics"
+            ? selectedTag.toLowerCase().replace(/\s+/g, "-")
+            : undefined;
 
-    const scrollContainer = document.getElementById("scroll-container") as HTMLElement | null;
-    const sentinel = sentinelRef.current;
-    if (!scrollContainer || !sentinel) return;
+        const apiStartTime = performance.now();
+        const result = await getPapers({
+          page,
+          ...filterParams,
+          task: selectedTask ?? filterParams?.task,
+          period,
+        });
+        const apiDuration = performance.now() - apiStartTime;
+        if (process.env.NODE_ENV === "development") console.log(`[PaperList] API call completed in ${apiDuration.toFixed(2)}ms`);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting) && !loading && hasMore) {
-          loadPage(page + 1);
-        }
-      },
-      { root: scrollContainer, rootMargin: "900px 0px", threshold: 0 }
-    );
+        setHasMore(result.hasMore);
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasMore, loadPage, loading, page, papers.length]);
-
-  // Prefetch next page when current page loads
-  useEffect(() => {
-    if (hasMore && !loading && papers.length > 0) {
-      prefetchPage(page + 1);
-    }
-  }, [hasMore, loading, page, papers.length, prefetchPage]);
-
-  // Performance logging
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[PaperList] Page ${page} selectedTag="${selectedTag}" papers: ${papers.length}`);
+        setPapers((prev) => {
+          const existingSlugs = new Set(prev.map(p => p.slug));
+          const newPapers = result.papers.filter(p => !existingSlugs.has(p.slug));
+          if (process.env.NODE_ENV === "development") console.log(`[PaperList] Adding ${newPapers.length} new papers, total now ${prev.length + newPapers.length}`);
+          return [...prev, ...newPapers];
+        });
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load papers. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
     }
   }, [page, selectedTag, papers.length]);
 
@@ -560,7 +638,7 @@ export default function PaperList({
           <PaperCard key={paper.slug} paper={paper} />
         ))}
 
-        {/* Initial load skeleton */}
+        {/* Initial load: show skeleton cards instead of spinner */}
         {loading && papers.length === 0 && (
           <>
             <PaperCardSkeleton />
@@ -569,14 +647,13 @@ export default function PaperList({
           </>
         )}
 
-        {/* Pagination load spinner */}
+        {/* Pagination load: show small spinner at bottom */}
         {loading && papers.length > 0 && (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#E5E5E0]" />
           </div>
         )}
 
-        {/* No papers state */}
         {!loading && papers.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 px-4 text-center animate-fade-in w-full col-span-full">
             <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 border border-[#E5E5E0] shadow-sm">
@@ -590,23 +667,6 @@ export default function PaperList({
             <p className="text-[14px] text-[#666666] max-w-[320px] leading-relaxed">
               We couldn't find any papers matching your selected time period or category. Try clearing your filters or selecting "All time".
             </p>
-          </div>
-        )}
-
-        {/* Error state with papers */}
-        {papers.length > 0 && error && (
-          <div className="py-6 flex justify-center items-center text-[#F55036]">
-            <p className="text-[14px]">{error}</p>
-          </div>
-        )}
-
-        {/* Sentinel for infinite scroll */}
-        <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-
-        {/* End of list */}
-        {!hasMore && papers.length > 0 && (
-          <div className="py-6 flex justify-center items-center text-[#737373]">
-            <p className="text-[12px]">No more papers to load.</p>
           </div>
         )}
       </div>

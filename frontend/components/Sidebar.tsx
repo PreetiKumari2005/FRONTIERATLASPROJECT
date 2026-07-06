@@ -395,6 +395,7 @@ export default function Sidebar({
             )}
           </AnimatePresence>
         </div>
+      </div>
 
         {/* All Domains - Special Item with Arrow */}
         <div className="pt-4 mt-2 border-t border-[#E5E5E0]">
