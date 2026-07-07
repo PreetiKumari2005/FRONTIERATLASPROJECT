@@ -11,7 +11,7 @@ import {
 } from "./types.js";
 
 // Mitigation: Helper function to enforce a strict timeout constraint
-const withTimeout = <T>(promise: Promise<T>, ms: number = 2000): Promise<T> => {
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error(`Database query timed out after ${ms}ms`)), ms)
   );
@@ -20,9 +20,25 @@ const withTimeout = <T>(promise: Promise<T>, ms: number = 2000): Promise<T> => {
 
 export class QueryRouter {
   private readonly databaseManager: DatabaseManager;
+  private readonly queryTimeout: number;
+  private static loggedTimeout = false;
 
-  constructor(databaseManager: DatabaseManager) {
+  constructor(databaseManager: DatabaseManager, queryTimeoutMs?: string) {
     this.databaseManager = databaseManager;
+    // Parse timeout from env, use defaults if not provided
+    const parsedTimeout = queryTimeoutMs ? parseInt(queryTimeoutMs, 10) : undefined;
+    const isDevelopment = process.env.NODE_ENV !== "production";
+    this.queryTimeout = parsedTimeout && !isNaN(parsedTimeout) 
+      ? parsedTimeout 
+      : isDevelopment 
+        ? 30000 
+        : 5000;
+    
+    // Log timeout once during startup (development only)
+    if (isDevelopment && !QueryRouter.loggedTimeout) {
+      console.log(`⏱️ Query timeout configured to ${this.queryTimeout}ms`);
+      QueryRouter.loggedTimeout = true;
+    }
   }
 
   /**
@@ -45,8 +61,8 @@ export class QueryRouter {
         const prisma = this.databaseManager.getClient(targetShard.id);
 
         try {
-          // Mitigation: Strict 2-second timeout wrapper applied to all database executions
-          const result = await withTimeout(executeQuery(prisma, targetShard.id), 2000);
+          // Mitigation: Strict configurable timeout wrapper applied to all database executions
+          const result = await withTimeout(executeQuery(prisma, targetShard.id), this.queryTimeout);
           return { shardId: targetShard.id, result };
         } catch (error) {
           // Mitigation: Single shard failure isolation. Logs error but doesn't crash the aggregate flow

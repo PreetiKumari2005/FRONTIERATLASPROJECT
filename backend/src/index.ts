@@ -32,6 +32,7 @@ type Env = {
     SHARD_3_DATABASE_URL?: string;
     SHARD_4_DATABASE_URL?: string;
     SHARD_5_DATABASE_URL?: string;
+    QUERY_TIMEOUT_MS?: string;
   };
   Variables: {
     prisma: PrismaClient;
@@ -65,6 +66,7 @@ app.use("*", async (c, next) => {
   const SHARD_3_DATABASE_URL = (c.env.SHARD_3_DATABASE_URL || DATABASE_URL) as string;
   const SHARD_4_DATABASE_URL = (c.env.SHARD_4_DATABASE_URL || DATABASE_URL) as string;
   const SHARD_5_DATABASE_URL = (c.env.SHARD_5_DATABASE_URL || DATABASE_URL) as string;
+  const QUERY_TIMEOUT_MS = c.env.QUERY_TIMEOUT_MS;
 
   const REDIS_URL = c.env.UPSTASH_REDIS_REST_URL;
   const REDIS_TOKEN = c.env.UPSTASH_REDIS_REST_TOKEN;
@@ -107,7 +109,7 @@ redisManager.connect(REDIS_URL, REDIS_TOKEN);
     SHARD_4_DATABASE_URL: cleanShard4Url,
     SHARD_5_DATABASE_URL: cleanShard5Url,
   });
-  const queryRouter = new QueryRouter(databaseManager);
+  const queryRouter = new QueryRouter(databaseManager, QUERY_TIMEOUT_MS);
 
   c.set("prisma", prisma);
   c.set("databaseManager", databaseManager);
