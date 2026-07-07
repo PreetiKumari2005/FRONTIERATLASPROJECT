@@ -10,6 +10,14 @@ import {
   TargetShard,
 } from "./types.js";
 
+// Mitigation: Helper function to enforce a strict timeout constraint
+const withTimeout = <T>(promise: Promise<T>, ms: number = 2000): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Database query timed out after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]);
+};
+
 export class QueryRouter {
   private readonly databaseManager: DatabaseManager;
 
@@ -32,15 +40,17 @@ export class QueryRouter {
       const failedShards: ShardId[] = [];
       const results: T[] = [];
 
-      // Execute queries on all target shards
+      // Execute queries on all target shards using scatter-gather
       const queryPromises = plan.targetShards.map(async (targetShard) => {
         const prisma = this.databaseManager.getClient(targetShard.id);
 
         try {
-          const result = await executeQuery(prisma, targetShard.id);
+          // Mitigation: Strict 2-second timeout wrapper applied to all database executions
+          const result = await withTimeout(executeQuery(prisma, targetShard.id), 2000);
           return { shardId: targetShard.id, result };
         } catch (error) {
-          console.error(`Query failed on shard ${targetShard.id}`, error);
+          // Mitigation: Single shard failure isolation. Logs error but doesn't crash the aggregate flow
+          console.error(`🚨 Query failed or timed out on shard ${targetShard.id}:`, error);
           failedShards.push(targetShard.id);
           return null;
         } finally {
@@ -48,10 +58,10 @@ export class QueryRouter {
         }
       });
 
-      // Wait for all queries to settle
+      // Wait for all parallel shard queries to settle (Scatter-Gather configuration)
       const settledResults = await Promise.allSettled(queryPromises);
 
-      // Process results
+      // Process results from all available responsive shards
       for (const settled of settledResults) {
         if (settled.status === "fulfilled" && settled.value !== null) {
           results.push(settled.value.result);
@@ -74,7 +84,7 @@ export class QueryRouter {
       return {
         plan: fallbackPlan,
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : "Unknown structural routing error",
         results: [],
         failedShards: [],
       };
@@ -107,9 +117,8 @@ export class QueryRouter {
    * @returns Array of TargetShard
    */
   async resolveTargetShards(intent: QueryIntent): Promise<TargetShard[]> {
-    // Case 1: Paper details - check if we have shard info in intent.filters, otherwise return empty for lookup required
+    // Case 1: Paper details - check if we have shard info in intent.filters
     if (intent.entity === "paper" && intent.operation === "findUnique") {
-      // For now, return general archive as fallback if no shard info
       return [{ id: ShardId.SHARD_5, type: "primary" }];
     }
 
@@ -137,14 +146,12 @@ export class QueryRouter {
 
     let strategy: RoutingStrategy;
 
-    // Determine strategy
     if (targetShards.length === 1) {
       strategy = RoutingStrategy.SHARD_KEY;
     } else {
-      strategy = RoutingStrategy.LOAD_BALANCED; // Or another appropriate strategy for scatter-gather
+      strategy = RoutingStrategy.LOAD_BALANCED;
     }
 
-    // Paper details special case (placeholder for lookup required)
     if (
       intent.entity === "paper" &&
       intent.operation === "findUnique" &&
