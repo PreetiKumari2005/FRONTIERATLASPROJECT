@@ -69,8 +69,6 @@ export class QueryRouter {
           console.error(`🚨 Query failed or timed out on shard ${targetShard.id}:`, error);
           failedShards.push(targetShard.id);
           return null;
-        } finally {
-          await this.databaseManager.disconnect(prisma);
         }
       });
 
@@ -133,9 +131,12 @@ export class QueryRouter {
    * @returns Array of TargetShard
    */
   async resolveTargetShards(intent: QueryIntent): Promise<TargetShard[]> {
-    // Case 1: Paper details - check if we have shard info in intent.filters
+    // Case 1: Paper details - check if we have shard info in intent.shardHint
     if (intent.entity === "paper" && intent.operation === "findUnique") {
-      return [{ id: ShardId.SHARD_5, type: "primary" }];
+      if (intent.shardHint !== undefined) {
+        return [{ id: intent.shardHint, type: "primary" }];
+      }
+      return this.getAllShards();
     }
 
     // Case 2: Category page (has intent.category)
