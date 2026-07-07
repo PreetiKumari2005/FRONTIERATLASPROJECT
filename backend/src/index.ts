@@ -4,6 +4,7 @@ import { env } from "hono/adapter";
 import { PrismaClient } from "./generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
+import { redisManager } from "./lib/redis";
 import { DatabaseManager } from "./database/DatabaseManager.js";
 import { QueryRouter } from "./routing/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -24,6 +25,8 @@ import benchmarkRoutes from "./routes/benchmark.routes.js";
 type Env = {
   Bindings: {
     DATABASE_URL: string;
+    UPSTASH_REDIS_REST_URL: string;
+    UPSTASH_REDIS_REST_TOKEN: string;
     SHARD_1_DATABASE_URL?: string;
     SHARD_2_DATABASE_URL?: string;
     SHARD_3_DATABASE_URL?: string;
@@ -62,6 +65,13 @@ app.use("*", async (c, next) => {
   const SHARD_3_DATABASE_URL = (c.env.SHARD_3_DATABASE_URL || DATABASE_URL) as string;
   const SHARD_4_DATABASE_URL = (c.env.SHARD_4_DATABASE_URL || DATABASE_URL) as string;
   const SHARD_5_DATABASE_URL = (c.env.SHARD_5_DATABASE_URL || DATABASE_URL) as string;
+
+  const REDIS_URL = c.env.UPSTASH_REDIS_REST_URL;
+  const REDIS_TOKEN = c.env.UPSTASH_REDIS_REST_TOKEN;
+
+redisManager.connect(REDIS_URL, REDIS_TOKEN);
+
+
 
   // Strip quotes if they were included in the .dev.vars file
   const cleanUrl = DATABASE_URL ? DATABASE_URL.replace(/^"|"$/g, "") : "";
