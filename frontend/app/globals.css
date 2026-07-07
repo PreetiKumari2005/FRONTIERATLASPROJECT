@@ -81,7 +81,7 @@
   }
 
   .ds-input {
-    @apply rounded-full border border-border bg-white px-4 py-2 text-sm text-foreground placeholder:text-[#909090] shadow-none outline-none transition-colors duration-200 ease-in-out focus:border-[#FF5A1F] focus:ring-2 focus:ring-[rgba(255,90,31,0.14)];
+    @apply rounded-full border border-border bg-white px-8 py-2 text-sm text-foreground placeholder:text-[#909090] shadow-none outline-none transition-colors duration-200 ease-in-out focus:border-[#FF5A1F] focus:ring-2 focus:ring-[rgba(255,90,31,0.14)];
   }
 
   .ds-text-primary {

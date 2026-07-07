@@ -10,5 +10,7 @@
     "build": "cd frontend && npm run build",
     "lint": "npm run lint --workspace=frontend"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "@upstash/redis": "^1.38.0"
+  }
 }
