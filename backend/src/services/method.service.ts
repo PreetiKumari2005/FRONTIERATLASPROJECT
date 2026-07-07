@@ -190,10 +190,7 @@ export const getMethodBySlug = async (queryRouter: QueryRouter, slug: string) =>
   const routingResult = await queryRouter.routeQuery(intent, async (prisma) => {
     return prisma.method.findUnique({
       where: { slug },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
+      include: {
         _count: {
           select: { papers: true },
         },
@@ -220,6 +217,11 @@ export const getMethodBySlug = async (queryRouter: QueryRouter, slug: string) =>
                       select: { name: true },
                     },
                   },
+                },
+                sotaClaims: {
+                  select: {
+                    benchmark: { select: { name: true, slug: true } }
+                  }
                 }
               },
             },
