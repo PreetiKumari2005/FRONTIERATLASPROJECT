@@ -8,35 +8,30 @@ export const ingestPaper = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
   const body = await c.req.json();
 
+  const newPaper = await paperService.ingestPaper(queryRouter, body.content);
+
+  // Invalidate caches
+  const redis = redisManager.getClient();
   try {
-    const newPaper = await paperService.ingestPaper(queryRouter, body.content);
+    await redis.del(`paper:${newPaper.slug}`);
 
-    // Invalidate caches
-    const redis = redisManager.getClient();
-    try {
-      await redis.del(`paper:${newPaper.slug}`);
-      // Use SCAN in production instead of KEYS for large datasets
-      const keys = await redis.keys("papers:*");
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
-    } catch (err) {
-      console.error("Redis cache invalidation failed:", err);
+    const keys = await redis.keys("papers:*");
+    if (keys.length > 0) {
+      await redis.del(...keys);
     }
-
-    return c.json(
-      {
-        status: "success",
-        message: "Paper successfully ingested",
-        paper_id: newPaper.id,
-        slug: newPaper.slug,
-      },
-      201,
-    );
-  } catch (error: any) {
-    console.error("Ingest error:", error);
-    return c.json({ status: "error", detail: error.message }, 500);
+  } catch (err) {
+    console.error("Redis cache invalidation failed:", err);
   }
+
+  return c.json(
+    {
+      status: "success",
+      message: "Paper successfully ingested",
+      paper_id: newPaper.id,
+      slug: newPaper.slug,
+    },
+    201,
+  );
 };
 
 export const getPapers = async (c: Context) => {
@@ -48,8 +43,9 @@ export const getPapers = async (c: Context) => {
   const period = c.req.query("period") || "all";
   const page = Number(c.req.query("page")) || 1;
   const limit = Number(c.req.query("limit")) || 20;
+  const cursor = c.req.query("cursor");
 
-  const cacheKey = `papers:${JSON.stringify({ sort, task, method, model, period, page, limit })}`;
+  const cacheKey = `papers:${JSON.stringify({ sort, task, method, model, period, page, limit, cursor })}`;
 
   try {
     const redis = redisManager.getClient();
@@ -73,6 +69,7 @@ export const getPapers = async (c: Context) => {
       period,
       page,
       limit,
+      cursor,
     });
 
     const response = {
@@ -89,8 +86,21 @@ export const getPapers = async (c: Context) => {
 
     return c.json(response, 200);
   } catch (error: any) {
-    console.error("getPapers error:", error);
-    return c.json({ status: "error", detail: error.message }, 500);
+    console.error("Error in getPapers controller:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    const status =
+      message.startsWith("Invalid cursor") || message.includes("Cursor sort")
+        ? 400
+        : 500;
+    return c.json(
+      {
+        status: "error",
+        detail: message,
+        dbUrl: (c.env as any).DATABASE_URL,
+        bindings: Object.keys(c.env || {}),
+      },
+      status,
+    );
   }
 };
 
@@ -114,7 +124,6 @@ export const getPaperBySlug = async (c: Context) => {
     }
 
     const paper = await paperService.getPaperBySlug(queryRouter, slug);
-
     if (!paper) {
       return c.json({ status: "error", message: "Paper not found" }, 404);
     }
@@ -136,13 +145,14 @@ export const getPaperBySlug = async (c: Context) => {
 export const getPaperById = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
   const idResolver = c.var.idResolver as IdResolver | undefined; // optional fallback
-
   const id = c.req.param("id");
 
-  try {
-    const paper = await paperService.getPaperById(queryRouter, id as string, idResolver);
-    if (!id) return c.json({ status: "error", message: "ID is required" }, 400);
+  if (!id) {
+    return c.json({ status: "error", message: "ID is required" }, 400);
+  }
 
+  try {
+    const paper = await paperService.getPaperById(queryRouter, id, idResolver);
     if (!paper) {
       return c.json({ status: "error", message: "Paper not found" }, 404);
     }
@@ -160,17 +170,24 @@ export const updatePaper = async (c: Context) => {
   const body = await c.req.json();
 
   try {
-    const updatedPaper = await paperService.updatePaper(queryRouter, slug, body);
+    const updatedPaper = await paperService.updatePaper(
+      queryRouter,
+      slug,
+      body,
+    );
 
     if (!updatedPaper) {
       return c.json({ status: "error", message: "Paper not found" }, 404);
     }
 
+    // Invalidate caches
     const redis = redisManager.getClient();
     try {
       await redis.del(`paper:${slug}`);
       const keys = await redis.keys("papers:*");
-      if (keys.length > 0) await redis.del(...keys);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
     } catch (err) {
       console.error("Cache invalidation failed:", err);
     }
@@ -188,11 +205,14 @@ export const deletePaper = async (c: Context) => {
   try {
     await paperService.deletePaper(queryRouter, slug);
 
+    // Invalidate caches
     const redis = redisManager.getClient();
     try {
       await redis.del(`paper:${slug}`);
       const keys = await redis.keys("papers:*");
-      if (keys.length > 0) await redis.del(...keys);
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
     } catch (err) {
       console.error("Cache invalidation failed:", err);
     }
@@ -218,6 +238,9 @@ export const searchPapers = async (c: Context) => {
     return c.json({ status: "success", data: result }, 200);
   } catch (error: any) {
     console.error("Search error:", error);
-    return c.json({ status: "error", message: error.message || "Search failed" }, 500);
+    return c.json(
+      { status: "error", message: error.message || "Search failed" },
+      500,
+    );
   }
 };
