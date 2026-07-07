@@ -29,6 +29,13 @@ JWT_ACCESS_SECRET="your-access-secret-here"
 JWT_REFRESH_SECRET="your-refresh-secret-here"
 
 # ---------------------------
+# Query Router
+# ---------------------------
+# Timeout in milliseconds applied to every database shard query.
+# If not set, defaults to 30000ms in development and 5000ms in production.
+# QUERY_TIMEOUT_MS=30000
+
+# ---------------------------
 # Optional
 # ---------------------------
 # Number of bcrypt salt rounds. Defaults to 12 if not set.

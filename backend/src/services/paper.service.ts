@@ -1,6 +1,9 @@
 import { PrismaClient, Prisma } from "../generated/prisma/client";
 import { QueryRouter } from "../routing/index.js";
 import { QueryIntent, QueryType } from "../routing/types.js";
+import { ShardId } from "../database/shard-config.js";
+import { IdResolver } from "../routing/IdResolver";
+import { redisManager } from "../lib/redis.js";
 import { CursorManager } from "../pagination/CursorManager.js";
 import { SortingEngine } from "../pagination/SortingEngine.js";
 
@@ -32,39 +35,6 @@ const exposeThumbnailUrl = <T extends { thumbnailUrl?: string | null }>(
     thumbnailUrl: thumbnailUrl ?? null,
     thumbnail_url: thumbnailUrl ?? null,
   };
-};
-
-export const ingestPaper = async (queryRouter: QueryRouter, data: any) => {
-  const safeTitle = data.title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-  const slug = `${safeTitle.substring(0, 50)}-${Math.random().toString(36).substring(2, 10)}`;
-
-  const intent: QueryIntent = {
-    type: QueryType.WRITE,
-    entity: "paper",
-    operation: "create",
-    data: { ...data, slug },
-  };
-
-  const routingResult = await queryRouter.routeQuery(
-    intent,
-    async (prisma, _shardId) => {
-      return prisma.paper.create({
-        data: {
-          slug,
-          title: data.title,
-          paperUrl: data.paper_url,
-          thumbnailUrl: data.thumbnail_url,
-          projectUrl: data.github_url,
-          citationCount: data.github_stars || 0,
-        },
-      });
-    },
-  );
-
-  return routingResult.results[0];
 };
 
 // Define the specific select object
@@ -210,6 +180,39 @@ const deduplicatePapers = (papers: PaperQueryItem[]): PaperFindManyResult => {
   return Array.from(deduplicated.values());
 };
 
+export const ingestPaper = async (queryRouter: QueryRouter, data: any) => {
+  const safeTitle = data.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  const slug = `${safeTitle.substring(0, 50)}-${Math.random().toString(36).substring(2, 10)}`;
+
+  const intent: QueryIntent = {
+    type: QueryType.WRITE,
+    entity: "paper",
+    operation: "create",
+    data: { ...data, slug },
+  };
+
+  const routingResult = await queryRouter.routeQuery(
+    intent,
+    async (prisma, _shardId) => {
+      return prisma.paper.create({
+        data: {
+          slug,
+          title: data.title,
+          paperUrl: data.paper_url,
+          thumbnailUrl: data.thumbnail_url,
+          projectUrl: data.github_url,
+          citationCount: data.github_stars || 0,
+        },
+      });
+    },
+  );
+
+  return routingResult.results[0];
+};
+
 export const getPapers = async (
   queryRouter: QueryRouter,
   queryOrLimit: GetPapersQuery | number = {},
@@ -233,46 +236,18 @@ export const getPapers = async (
 
   const where: any = {};
 
-  if (query.task) {
-    where.tasks = {
-      some: {
-        task: {
-          slug: query.task,
-        },
-      },
-    };
-  }
-
-  if (query.method) {
-    where.methods = {
-      some: {
-        method: {
-          slug: query.method,
-        },
-      },
-    };
-  }
-
-  if (query.model) {
-    where.models = {
-      some: {
-        model: {
-          slug: query.model,
-        },
-      },
-    };
-  }
+  if (query.task) where.tasks = { some: { task: { slug: query.task } } };
+  if (query.method)
+    where.methods = { some: { method: { slug: query.method } } };
+  if (query.model) where.models = { some: { model: { slug: query.model } } };
 
   if (period !== "all") {
     const publicationDate = new Date();
-
-    if (period === "today") {
-      publicationDate.setHours(0, 0, 0, 0);
-    } else if (period === "week") {
+    if (period === "today") publicationDate.setHours(0, 0, 0, 0);
+    else if (period === "week")
       publicationDate.setDate(publicationDate.getDate() - 7);
-    } else if (period === "month") {
+    else if (period === "month")
       publicationDate.setDate(publicationDate.getDate() - 30);
-    }
 
     if (period === "today" || period === "week" || period === "month") {
       where.publicationDate = {
@@ -426,6 +401,15 @@ export const getPaperBySlug = async (
   return paper ? exposeThumbnailUrl(paper) : null;
 };
 
+export const getPaperById = async (
+  queryRouter: QueryRouter,
+  id: string,
+  idResolver?: IdResolver,
+) => {
+  const resolver = idResolver ?? new IdResolver(redisManager, queryRouter);
+  return resolver.resolvePaper(id);
+};
+
 export const updatePaper = async (
   queryRouter: QueryRouter,
   slug: string,
@@ -456,7 +440,7 @@ export const updatePaper = async (
   );
 
   const paper = routingResult.results[0];
-  return exposeThumbnailUrl(paper);
+  return paper ? exposeThumbnailUrl(paper) : null;
 };
 
 export const deletePaper = async (queryRouter: QueryRouter, slug: string) => {
@@ -477,4 +461,73 @@ export const deletePaper = async (queryRouter: QueryRouter, slug: string) => {
   );
 
   return routingResult.results[0];
+};
+
+export const searchPapers = async (
+  queryRouter: QueryRouter,
+  query: { q?: string; limit?: number; page?: number; sort?: string } = {},
+) => {
+  const searchTerm = query.q?.trim() || "";
+  if (!searchTerm) {
+    return { papers: [], total: 0, page: 1, hasMore: false, query: "" };
+  }
+
+  const limit = Math.max(Number(query.limit) || 20, 1);
+  const page = Math.max(Number(query.page) || 1, 1);
+  const skip = (page - 1) * limit;
+  const sort = query.sort || "relevance";
+
+  const intent: QueryIntent = {
+    type: QueryType.READ,
+    entity: "paper",
+    operation: "findMany",
+    filters: { q: searchTerm, sort },
+  };
+
+  const routingResult = await queryRouter.routeQuery(
+    intent,
+    async (prisma, _shardId) => {
+      return prisma.paper.findMany({
+        where: {
+          OR: [
+            { title: { contains: searchTerm, mode: "insensitive" } },
+            { abstract: { contains: searchTerm, mode: "insensitive" } },
+          ],
+        },
+        orderBy:
+          sort === "latest"
+            ? [{ publicationDate: "desc" }, { githubStars: "desc" }]
+            : [{ githubStars: "desc" }, { publicationDate: "desc" }],
+        take: limit,
+        skip,
+        select: paperSelect,
+      });
+    },
+  );
+
+  const seenSlugs = new Set<string>();
+  const papers: PaperFindManyResult = [];
+
+  for (const shardResults of routingResult.results) {
+    if (!shardResults) continue;
+    for (const paper of shardResults) {
+      if (!seenSlugs.has(paper.slug)) {
+        seenSlugs.add(paper.slug);
+        papers.push(paper);
+      }
+    }
+  }
+
+  return {
+    papers: papers.map((paper) => ({
+      ...exposeThumbnailUrl(paper),
+      authors: paper.authors.map(({ author }) => author),
+      tasks: paper.tasks.map(({ task }) => task),
+      methods: paper.methods.map(({ method }) => method),
+    })),
+    total: papers.length,
+    page,
+    hasMore: papers.length >= limit,
+    query: searchTerm,
+  };
 };

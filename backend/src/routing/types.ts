@@ -16,6 +16,7 @@ export interface QueryIntent {
   category?: string;
   filters?: Record<string, unknown>;
   data?: Record<string, unknown>;
+  shardHint?: ShardId;
 }
 
 export enum RoutingStrategy {

@@ -1,25 +1,37 @@
 import { Context } from "hono";
 import * as paperService from "../services/paper.service.js";
+import { redisManager } from "../lib/redis.js";
 import { QueryRouter } from "../routing/index.js";
+import { IdResolver } from "../routing/IdResolver.js";
 
 export const ingestPaper = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
   const body = await c.req.json();
 
+  const newPaper = await paperService.ingestPaper(queryRouter, body.content);
+
+  // Invalidate caches
+  const redis = redisManager.getClient();
   try {
-    const newPaper = await paperService.ingestPaper(queryRouter, body.content);
-    return c.json(
-      {
-        status: "success",
-        message: "Paper successfully written via Prisma Neon Adapter",
-        paper_id: newPaper.id,
-        slug: newPaper.slug,
-      },
-      201,
-    );
-  } catch (error: any) {
-    return c.json({ status: "error", detail: error.message }, 500);
+    await redis.del(`paper:${newPaper.slug}`);
+
+    const keys = await redis.keys("papers:*");
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } catch (err) {
+    console.error("Redis cache invalidation failed:", err);
   }
+
+  return c.json(
+    {
+      status: "success",
+      message: "Paper successfully ingested",
+      paper_id: newPaper.id,
+      slug: newPaper.slug,
+    },
+    201,
+  );
 };
 
 export const getPapers = async (c: Context) => {
@@ -33,7 +45,22 @@ export const getPapers = async (c: Context) => {
   const limit = Number(c.req.query("limit")) || 20;
   const cursor = c.req.query("cursor");
 
+  const cacheKey = `papers:${JSON.stringify({ sort, task, method, model, period, page, limit, cursor })}`;
+
   try {
+    const redis = redisManager.getClient();
+    let cached = null;
+
+    try {
+      cached = await redis.get(cacheKey);
+    } catch (err) {
+      console.error("Redis GET failed:", err);
+    }
+
+    if (cached) {
+      return c.json(cached as any, 200);
+    }
+
     const result = await paperService.getPapers(queryRouter, {
       sort,
       task,
@@ -45,14 +72,19 @@ export const getPapers = async (c: Context) => {
       cursor,
     });
 
-    return c.json(
-      {
-        status: "success",
-        count: result.papers.length,
-        data: result,
-      },
-      200,
-    );
+    const response = {
+      status: "success",
+      count: result.papers.length,
+      data: result,
+    };
+
+    try {
+      await redis.set(cacheKey, response, { ex: 300 }); // 5 minutes
+    } catch (err) {
+      console.error("Redis SET failed:", err);
+    }
+
+    return c.json(response, 200);
   } catch (error: any) {
     console.error("Error in getPapers controller:", error);
     const message = error instanceof Error ? error.message : String(error);
@@ -75,14 +107,59 @@ export const getPapers = async (c: Context) => {
 export const getPaperBySlug = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
   const slug = c.req.param("slug") as string;
+  const cacheKey = `paper:${slug}`;
 
   try {
+    const redis = redisManager.getClient();
+    let cached = null;
+
+    try {
+      cached = await redis.get(cacheKey);
+    } catch (err) {
+      console.error("Redis GET failed:", err);
+    }
+
+    if (cached) {
+      return c.json(cached as any, 200);
+    }
+
     const paper = await paperService.getPaperBySlug(queryRouter, slug);
     if (!paper) {
       return c.json({ status: "error", message: "Paper not found" }, 404);
     }
+
+    const response = { status: "success", data: paper };
+
+    try {
+      await redis.set(cacheKey, response, { ex: 300 });
+    } catch (err) {
+      console.error("Redis SET failed:", err);
+    }
+
+    return c.json(response, 200);
+  } catch (error: any) {
+    return c.json({ status: "error", detail: error.message }, 500);
+  }
+};
+
+export const getPaperById = async (c: Context) => {
+  const queryRouter = c.var.queryRouter as QueryRouter;
+  const idResolver = c.var.idResolver as IdResolver | undefined; // optional fallback
+  const id = c.req.param("id");
+
+  if (!id) {
+    return c.json({ status: "error", message: "ID is required" }, 400);
+  }
+
+  try {
+    const paper = await paperService.getPaperById(queryRouter, id, idResolver);
+    if (!paper) {
+      return c.json({ status: "error", message: "Paper not found" }, 404);
+    }
+
     return c.json({ status: "success", data: paper }, 200);
   } catch (error: any) {
+    console.error("[getPaperById] Error:", error);
     return c.json({ status: "error", detail: error.message }, 500);
   }
 };
@@ -98,6 +175,23 @@ export const updatePaper = async (c: Context) => {
       slug,
       body,
     );
+
+    if (!updatedPaper) {
+      return c.json({ status: "error", message: "Paper not found" }, 404);
+    }
+
+    // Invalidate caches
+    const redis = redisManager.getClient();
+    try {
+      await redis.del(`paper:${slug}`);
+      const keys = await redis.keys("papers:*");
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } catch (err) {
+      console.error("Cache invalidation failed:", err);
+    }
+
     return c.json({ status: "success", data: updatedPaper }, 200);
   } catch (error: any) {
     return c.json({ status: "error", detail: error.message }, 500);
@@ -110,8 +204,43 @@ export const deletePaper = async (c: Context) => {
 
   try {
     await paperService.deletePaper(queryRouter, slug);
+
+    // Invalidate caches
+    const redis = redisManager.getClient();
+    try {
+      await redis.del(`paper:${slug}`);
+      const keys = await redis.keys("papers:*");
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } catch (err) {
+      console.error("Cache invalidation failed:", err);
+    }
+
     return c.json({ status: "success", message: "Paper deleted" }, 200);
   } catch (error: any) {
     return c.json({ status: "error", detail: error.message }, 500);
+  }
+};
+
+export const searchPapers = async (c: Context) => {
+  const queryRouter = c.var.queryRouter as QueryRouter;
+
+  const searchQuery = {
+    q: c.req.query("q")?.trim(),
+    limit: c.req.query("limit") ? Number(c.req.query("limit")) : undefined,
+    page: c.req.query("page") ? Number(c.req.query("page")) : undefined,
+    sort: c.req.query("sort"),
+  };
+
+  try {
+    const result = await paperService.searchPapers(queryRouter, searchQuery);
+    return c.json({ status: "success", data: result }, 200);
+  } catch (error: any) {
+    console.error("Search error:", error);
+    return c.json(
+      { status: "error", message: error.message || "Search failed" },
+      500,
+    );
   }
 };
