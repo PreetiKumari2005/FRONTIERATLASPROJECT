@@ -479,8 +479,9 @@ PaperCardSkeleton.displayName = "PaperCardSkeleton";
 /* ─── List ───────────────────────────────────────────────────────────────── */
 interface PaperListProps {
   selectedTag?: string;
-  filterParams?: Pick<GetPapersParams, "sort" | "task" | "method">;
+  filterParams?: Pick<GetPapersParams, "sort" | "task" | "method" | "model">;
   period?: GetPapersParams["period"];
+  searchQuery?: string;
   initialPapers?: GetPapersResult | null;
   initialError?: string;
 }
@@ -489,6 +490,7 @@ export default function PaperList({
   selectedTag,
   filterParams,
   period,
+  searchQuery,
   initialPapers = null,
   initialError,
 }: PaperListProps) {
@@ -502,28 +504,46 @@ export default function PaperList({
   const cacheRef = useRef<Map<string, GetPapersResult>>(new Map());
   const inFlightRef = useRef<Map<string, Promise<GetPapersResult>>>(new Map());
   const loadingRef = useRef(false);
+  const normalizedSearchQuery = useMemo(
+    () => searchQuery?.trim().toLowerCase() ?? "",
+    [searchQuery],
+  );
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const nextPageRef = useRef<number>(initialPapers?.hasMore ? initialPapers.page + 1 : 0);
+  const nextPageRef = useRef<number>(
+    initialPapers?.hasMore ? initialPapers.page + 1 : 0,
+  );
+
+  const matchesSearch = useCallback(
+    (paper: Paper) => {
+      if (!normalizedSearchQuery) return true;
+      const haystack = [
+        paper.title,
+        paper.authors,
+        paper.description,
+        ...(paper.tags ?? []),
+        ...(paper.additionalTags ?? []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(normalizedSearchQuery);
+    },
+    [normalizedSearchQuery],
+  );
 
   // Memoize task from selectedTag
   const task = useMemo(() => {
+    if (filterParams?.task) return filterParams.task;
     return selectedTag && selectedTag !== "All Topics"
       ? selectedTag.toLowerCase().replace(/\s+/g, "-")
       : undefined;
-  }, [selectedTag]);
+  }, [filterParams?.task, selectedTag]);
 
   // Get cache key
   const getCacheKey = useCallback(
     (pageNumber: number) => {
-      return `${task ?? "all"}:${filterParams?.task ?? "none"}:${filterParams?.method ?? "none"}:${filterParams?.sort ?? "none"}:${period ?? "all"}:${pageNumber}`;
+      return `${task ?? "all"}:${filterParams?.model ?? "none"}:${filterParams?.method ?? "none"}:${filterParams?.sort ?? "none"}:${period ?? "all"}:${pageNumber}`;
     },
-    [
-      filterParams?.method,
-      filterParams?.sort,
-      filterParams?.task,
-      period,
-      task,
-    ],
+    [filterParams?.method, filterParams?.model, filterParams?.sort, period, task],
   );
 
   // Fetch page with caching
@@ -541,6 +561,7 @@ export default function PaperList({
       const request = getPapers({
         page: pageNumber,
         task,
+        model: filterParams?.model,
         method: filterParams?.method,
         sort: filterParams?.sort,
         period,
@@ -556,7 +577,14 @@ export default function PaperList({
       inFlightRef.current.set(key, request);
       return request;
     },
-    [filterParams?.method, filterParams?.sort, getCacheKey, period, task],
+    [
+      filterParams?.method,
+      filterParams?.model,
+      filterParams?.sort,
+      getCacheKey,
+      period,
+      task,
+    ],
   );
 
   // Append papers with duplicate prevention
@@ -591,13 +619,17 @@ export default function PaperList({
         setError(null);
 
         const result = await fetchPage(pageNumber);
+        const visiblePapers = normalizedSearchQuery
+          ? result.papers.filter(matchesSearch)
+          : result.papers;
+
         setPage(result.page);
         setHasMore(result.hasMore);
 
         if (replace) {
-          setPapers(result.papers);
+          setPapers(visiblePapers);
         } else {
-          appendPapers(result.papers);
+          appendPapers(visiblePapers);
         }
 
         if (result.hasMore) {
@@ -614,7 +646,13 @@ export default function PaperList({
         setLoading(false);
       }
     },
-    [appendPapers, fetchPage, prefetchPage],
+    [
+      appendPapers,
+      fetchPage,
+      matchesSearch,
+      normalizedSearchQuery,
+      prefetchPage,
+    ],
   );
 
   // Initialize or reset on filter change
@@ -624,28 +662,40 @@ export default function PaperList({
       !selectedTag &&
       !filterParams?.task &&
       !filterParams?.method &&
-      !period
+      !filterParams?.model &&
+      !filterParams?.sort &&
+      !period &&
+      !normalizedSearchQuery
     ) {
       cacheRef.current.set(getCacheKey(initialPapers.page), initialPapers);
       setPapers(initialPapers.papers);
       setPage(initialPapers.page);
+      setHasMore(initialPapers.hasMore);
       setError(initialError ?? null);
       if (initialPapers.hasMore) {
+        nextPageRef.current = initialPapers.page + 1;
         prefetchPage(initialPapers.page + 1);
+      } else {
+        nextPageRef.current = 0;
       }
       return;
     }
 
     setPapers([]);
     setPage(1);
+    setHasMore(true);
+    nextPageRef.current = 1;
     void loadPage(1, true);
   }, [
     filterParams?.method,
+    filterParams?.model,
+    filterParams?.sort,
     filterParams?.task,
     getCacheKey,
     initialError,
     initialPapers,
     loadPage,
+    normalizedSearchQuery,
     period,
     prefetchPage,
     selectedTag,
@@ -682,7 +732,10 @@ export default function PaperList({
 
   return (
     <Profiler id="PaperList" onRender={logRender}>
-      <div className="pb-12 bg-transparent grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-col gap-6 xl:gap-0">
+      <div
+        className="pb-12 bg-transparent grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-col gap-6 xl:gap-0"
+        data-page={page}
+      >
         {papers.map((paper) => (
           <PaperCard key={paper.slug} paper={paper} />
         ))}
