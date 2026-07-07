@@ -25,7 +25,7 @@ export class QueryRouter {
    */
   async routeQuery<T>(
     intent: QueryIntent,
-    executeQuery: (prisma: PrismaClient, shardId: ShardId) => Promise<T>
+    executeQuery: (prisma: PrismaClient, shardId: ShardId) => Promise<T>,
   ): Promise<RoutingResult<T>> {
     try {
       const plan = await this.createQueryPlan(intent);
@@ -34,14 +34,17 @@ export class QueryRouter {
 
       // Execute queries on all target shards
       const queryPromises = plan.targetShards.map(async (targetShard) => {
+        const prisma = this.databaseManager.getClient(targetShard.id);
+
         try {
-          const prisma = this.databaseManager.getClient(targetShard.id);
           const result = await executeQuery(prisma, targetShard.id);
           return { shardId: targetShard.id, result };
         } catch (error) {
           console.error(`Query failed on shard ${targetShard.id}`, error);
           failedShards.push(targetShard.id);
           return null;
+        } finally {
+          await this.databaseManager.disconnect(prisma);
         }
       });
 
@@ -54,12 +57,6 @@ export class QueryRouter {
           results.push(settled.value.result);
         }
       }
-
-      // TODO: Add global sorting
-      // TODO: Add ranking
-      // TODO: Add pagination
-      // TODO: Add deduplication
-      // TODO: Add aggregation
 
       return {
         plan,
@@ -148,7 +145,11 @@ export class QueryRouter {
     }
 
     // Paper details special case (placeholder for lookup required)
-    if (intent.entity === "paper" && intent.operation === "findUnique" && targetShards.length === 0) {
+    if (
+      intent.entity === "paper" &&
+      intent.operation === "findUnique" &&
+      targetShards.length === 0
+    ) {
       strategy = RoutingStrategy.PRIMARY_ONLY;
     }
 
