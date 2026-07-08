@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   try {
-    const initialPapers = await getPapers({ page: 1 });
+    const initialPapers = await getPapers({ page: 1, sort: "latest", period: "all" });
     return <HomeContent initialPapers={initialPapers} />;
   } catch (error) {
     console.error("Failed to load initial papers:", error);

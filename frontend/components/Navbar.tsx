@@ -8,11 +8,7 @@ import { usePathname } from "next/navigation";
 import { useScrollThreshold } from "@/lib/useScroll";
 import Sidebar from "@/components/Sidebar";
 
-const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Tasks", href: "/tasks" },
-  { label: "Methods", href: "/methods" },
-];
+
 export default function Navbar({
   activeSort,
   onItemSelect,

@@ -64,13 +64,7 @@ function getMeta(name: string) {
 }
 
 /* ─── sub-components ─────────────────────────────────────── */
-function SectionNumber({ n }: { n: string }) {
-  return (
-    <span className="text-[80px] md:text-[100px] font-black text-[#111111]/[0.04] leading-none select-none absolute -top-4 -left-2 pointer-events-none">
-      {n}
-    </span>
-  );
-}
+
 
 function BenchmarkCard({ b, meta }: { b: BenchmarkItem; meta: ReturnType<typeof getMeta> }) {
   const cfg = STATUS_CFG[meta.status] ?? STATUS_CFG["Unmapped"];

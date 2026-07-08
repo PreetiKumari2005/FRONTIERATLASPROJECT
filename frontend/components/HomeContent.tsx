@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import PaperList from "@/components/PaperFeed";
@@ -20,21 +20,32 @@ export default function HomeContent({
   const [activeSort, setActiveSort] = useState<string>("Latest Papers");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("All time");
 
+  const isMounted = useRef(false);
+
   // Stealthy Memory Check: Restore filters from sessionStorage if they exist
   useEffect(() => {
     const savedSort = sessionStorage.getItem("atlas_activeSort");
     const savedPeriod = sessionStorage.getItem("atlas_selectedPeriod");
     if (savedSort && savedSort !== "undefined" && savedSort !== "null") setActiveSort(savedSort);
     if (savedPeriod && savedPeriod !== "undefined" && savedPeriod !== "null") setSelectedPeriod(savedPeriod);
+    
+    // Mark as mounted after we've read the saved values
+    setTimeout(() => {
+      isMounted.current = true;
+    }, 0);
   }, []);
 
   // Save user preferences to memory when they change
   useEffect(() => {
-    sessionStorage.setItem("atlas_activeSort", activeSort);
+    if (isMounted.current) {
+      sessionStorage.setItem("atlas_activeSort", activeSort);
+    }
   }, [activeSort]);
 
   useEffect(() => {
-    sessionStorage.setItem("atlas_selectedPeriod", selectedPeriod);
+    if (isMounted.current) {
+      sessionStorage.setItem("atlas_selectedPeriod", selectedPeriod);
+    }
   }, [selectedPeriod]);
 
   // Map the UI tab to API parameters

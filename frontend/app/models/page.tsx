@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -61,9 +61,15 @@ function formatCompact(value: number) {
   }).format(value);
 }
 
-
-
 export default function ModelsPage() {
+  return (
+    <Suspense fallback={<SkeletonGrid />}>
+      <ModelsPageInner />
+    </Suspense>
+  );
+}
+
+function ModelsPageInner() {
   const searchParams = useSearchParams();
   const modelSlug = searchParams.get("model") ?? undefined;
 

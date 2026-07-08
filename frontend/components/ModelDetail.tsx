@@ -12,7 +12,6 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import type { ModelDetail as ModelDetailType } from "@/lib/models";
 
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function formatCompact(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -30,7 +29,6 @@ export default function ModelDetail({
 }) {
   const [copied, setCopied] = useState(false);
   const createdDate = new Date(model.createdAt);
-  const isNew = Date.now() - createdDate.getTime() < THIRTY_DAYS_MS;
 
   const handleCopyLink = async () => {
     try {
