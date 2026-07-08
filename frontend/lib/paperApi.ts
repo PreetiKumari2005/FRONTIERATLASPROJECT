@@ -94,11 +94,26 @@ function mapBackendPaper(raw: Record<string, unknown>): Paper {
     }).join(" • ");
   }
 
+  const rawThumb = String(raw.thumbnail_url || raw.thumbnailUrl || raw.thumbnail || "");
+  let finalThumbnail = "";
+
+  if (rawThumb && rawThumb !== "FAILED_404") {
+    // If it's a huge base64 image from the DB, format it properly
+    if (rawThumb.startsWith("/9j/") || rawThumb.startsWith("iVBORw0KGgo")) {
+      finalThumbnail = `data:image/jpeg;base64,${rawThumb}`;
+    } 
+    // If it's a valid local path, http URL, or ALREADY a formatted data URL, keep it
+    else if (rawThumb.startsWith("/") || rawThumb.startsWith("http") || rawThumb.startsWith("data:")) {
+      finalThumbnail = rawThumb;
+    }
+    // Otherwise, it's a corrupted short string (e.g., 'z5HwCV1J...'). We ignore it to prevent 404s.
+  }
+
   return {
     id: Number(raw.id) || String(raw.id),
     slug: String(raw.slug || raw.id || ""),
     title: String(raw.title || "Untitled Paper"),
-    thumbnail: String(raw.thumbnail_url || raw.thumbnailUrl || raw.thumbnail || ""),
+    thumbnail: finalThumbnail,
     authors: displayAuthors,
     date: formattedDate,
     description: String(raw.abstract || ""),

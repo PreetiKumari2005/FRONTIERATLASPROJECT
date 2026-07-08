@@ -1,43 +1,162 @@
 import { Context } from 'hono';
 import * as methodService from '../services/method.service.js';
+import { redisManager } from '../lib/redis.js';
+
+// ---------------------------------------------------------------------------
+// Version-counter helpers for method list cache
+// Same pattern as papers — INCR the version on any mutation so versioned list
+// keys are silently superseded without any wildcard scan.
+// ---------------------------------------------------------------------------
+
+const getMethodsVersion = async (): Promise<string> => {
+  try {
+    const redis = redisManager.getClient();
+    const v = await redis.get('methods:version');
+    return v ? String(v) : '0';
+  } catch {
+    return '0';
+  }
+};
+
+const bumpMethodsVersion = async (): Promise<void> => {
+  try {
+    const redis = redisManager.getClient();
+    await redis.incr('methods:version');
+  } catch (err) {
+    console.error('Redis methods version bump failed:', err);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Read handlers
+// ---------------------------------------------------------------------------
 
 export const getMethods = async (c: Context) => {
   const queryRouter = c.var.queryRouter as any;
   const sort = c.req.query('sort') || 'name';
-  const search = c.req.query('search');
+  const search = c.req.query('search') || '';
   const page = Number(c.req.query('page')) || 1;
   const limit = Number(c.req.query('limit')) || 20;
 
   try {
+    const redis = redisManager.getClient();
+
+    const version = await getMethodsVersion();
+    const cacheKey = `methods:v${version}:list:${sort}:${search}:${page}:${limit}`;
+
+    let cached = null;
+    try {
+      cached = await redis.get(cacheKey);
+    } catch (err) {
+      console.error('Redis GET failed:', err);
+    }
+
+    if (cached) {
+      return c.json(cached as any, 200);
+    }
+
     const result = await methodService.getMethods(queryRouter, {
       sort,
-      search,
+      search: search || undefined,
       page,
       limit,
     });
 
-    return c.json({
-      status: "success",
+    const response = {
+      status: 'success',
       count: result.methods.length,
       data: result,
-    }, 200);
+    };
+
+    try {
+      await redis.set(cacheKey, response, { ex: 900 }); // 15 minutes
+    } catch (err) {
+      console.error('Redis SET failed:', err);
+    }
+
+    return c.json(response, 200);
   } catch (error: any) {
-    return c.json({ status: "error", detail: error.message }, 500);
+    return c.json({ status: 'error', detail: error.message }, 500);
   }
 };
 
 export const getGroupedMethods = async (c: Context) => {
   const queryRouter = c.var.queryRouter as any;
+  // Grouped methods is a single stable key — no versioning needed here,
+  // we delete it explicitly on every mutation.
+  const cacheKey = 'methods:grouped';
+
   try {
+    const redis = redisManager.getClient();
+    let cached = null;
+
+    try {
+      cached = await redis.get(cacheKey);
+    } catch (err) {
+      console.error('Redis GET failed:', err);
+    }
+
+    if (cached) {
+      return c.json(cached as any, 200);
+    }
+
     const grouped = await methodService.getGroupedMethods(queryRouter);
-    return c.json({
-      status: "success",
+    const response = {
+      status: 'success',
       data: grouped,
-    }, 200);
+    };
+
+    try {
+      await redis.set(cacheKey, response, { ex: 1800 }); // 30 minutes — grouping is very stable
+    } catch (err) {
+      console.error('Redis SET failed:', err);
+    }
+
+    return c.json(response, 200);
   } catch (error: any) {
-    return c.json({ status: "error", detail: error.message }, 500);
+    return c.json({ status: 'error', detail: error.message }, 500);
   }
 };
+
+export const getMethodBySlug = async (c: Context) => {
+  const queryRouter = c.var.queryRouter as any;
+  const slug = c.req.param('slug') as string;
+  const cacheKey = `method:${slug}`;
+
+  try {
+    const redis = redisManager.getClient();
+    let cached = null;
+
+    try {
+      cached = await redis.get(cacheKey);
+    } catch (err) {
+      console.error('Redis GET failed:', err);
+    }
+
+    if (cached) {
+      return c.json(cached as any, 200);
+    }
+
+    const method = await methodService.getMethodBySlug(queryRouter, slug);
+    if (!method) return c.json({ status: 'error', message: 'Method not found' }, 404);
+
+    const response = { status: 'success', data: method };
+
+    try {
+      await redis.set(cacheKey, response, { ex: 600 }); // 10 minutes
+    } catch (err) {
+      console.error('Redis SET failed:', err);
+    }
+
+    return c.json(response, 200);
+  } catch (error: any) {
+    return c.json({ status: 'error', detail: error.message }, 500);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Mutation handlers — each invalidates relevant cache keys
+// ---------------------------------------------------------------------------
 
 export const seedCategories = async (c: Context) => {
   const prisma = c.var.prisma;
@@ -72,21 +191,17 @@ export const seedCategories = async (c: Context) => {
       } catch (e) {}
     }
   }
-  
-  return c.json({ status: "success", updated: updatedCount });
-};
 
-export const getMethodBySlug = async (c: Context) => {
-  const queryRouter = c.var.queryRouter as any;
-  const slug = c.req.param('slug') as string;
-
+  // Seed operation touches all methods — invalidate fully
+  await bumpMethodsVersion();
   try {
-    const method = await methodService.getMethodBySlug(queryRouter, slug);
-    if (!method) return c.json({ status: "error", message: "Method not found" }, 404);
-    return c.json({ status: "success", data: method }, 200);
-  } catch (error: any) {
-    return c.json({ status: "error", detail: error.message }, 500);
+    const redis = redisManager.getClient();
+    await redis.del('methods:grouped');
+  } catch (err) {
+    console.error('Cache invalidation failed after seed:', err);
   }
+  
+  return c.json({ status: 'success', updated: updatedCount });
 };
 
 export const createMethod = async (c: Context) => {
@@ -94,17 +209,27 @@ export const createMethod = async (c: Context) => {
   const body = await c.req.json();
 
   if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-    return c.json({ status: "error", message: "Name is required" }, 400);
+    return c.json({ status: 'error', message: 'Name is required' }, 400);
   }
 
   try {
     const method = await methodService.createMethod(queryRouter, { name: body.name.trim() });
-    return c.json({ status: "success", data: method }, 201);
+
+    // Invalidate list cache (bump version) + grouped cache
+    await bumpMethodsVersion();
+    try {
+      const redis = redisManager.getClient();
+      await redis.del('methods:grouped');
+    } catch (err) {
+      console.error('Cache invalidation failed:', err);
+    }
+
+    return c.json({ status: 'success', data: method }, 201);
   } catch (error: any) {
     if (error.code === 'P2002') {
-      return c.json({ status: "error", message: "A method with this name already exists" }, 409);
+      return c.json({ status: 'error', message: 'A method with this name already exists' }, 409);
     }
-    return c.json({ status: "error", detail: error.message }, 500);
+    return c.json({ status: 'error', detail: error.message }, 500);
   }
 };
 
@@ -114,22 +239,37 @@ export const updateMethod = async (c: Context) => {
   const body = await c.req.json();
 
   if (body.name !== undefined && (typeof body.name !== 'string' || body.name.trim().length === 0)) {
-    return c.json({ status: "error", message: "Name must be a non-empty string" }, 400);
+    return c.json({ status: 'error', message: 'Name must be a non-empty string' }, 400);
   }
 
   try {
     const method = await methodService.updateMethod(queryRouter, slug, {
       name: body.name ? body.name.trim() : undefined,
     });
-    return c.json({ status: "success", data: method }, 200);
+
+    // Invalidate: list version + grouped + this specific slug detail
+    await bumpMethodsVersion();
+    try {
+      const redis = redisManager.getClient();
+      await redis.del('methods:grouped');
+      await redis.del(`method:${slug}`);
+      // If name changed, the slug may have changed too — delete both
+      if (method && (method as any).slug && (method as any).slug !== slug) {
+        await redis.del(`method:${(method as any).slug}`);
+      }
+    } catch (err) {
+      console.error('Cache invalidation failed:', err);
+    }
+
+    return c.json({ status: 'success', data: method }, 200);
   } catch (error: any) {
     if (error.code === 'P2025') {
-      return c.json({ status: "error", message: "Method not found" }, 404);
+      return c.json({ status: 'error', message: 'Method not found' }, 404);
     }
     if (error.code === 'P2002') {
-      return c.json({ status: "error", message: "A method with this name already exists" }, 409);
+      return c.json({ status: 'error', message: 'A method with this name already exists' }, 409);
     }
-    return c.json({ status: "error", detail: error.message }, 500);
+    return c.json({ status: 'error', detail: error.message }, 500);
   }
 };
 
@@ -139,11 +279,22 @@ export const deleteMethod = async (c: Context) => {
 
   try {
     await methodService.deleteMethod(queryRouter, slug);
-    return c.json({ status: "success", message: "Method deleted" }, 200);
+
+    // Invalidate: list version + grouped + this specific slug detail
+    await bumpMethodsVersion();
+    try {
+      const redis = redisManager.getClient();
+      await redis.del('methods:grouped');
+      await redis.del(`method:${slug}`);
+    } catch (err) {
+      console.error('Cache invalidation failed:', err);
+    }
+
+    return c.json({ status: 'success', message: 'Method deleted' }, 200);
   } catch (error: any) {
     if (error.code === 'P2025') {
-      return c.json({ status: "error", message: "Method not found" }, 404);
+      return c.json({ status: 'error', message: 'Method not found' }, 404);
     }
-    return c.json({ status: "error", detail: error.message }, 500);
+    return c.json({ status: 'error', detail: error.message }, 500);
   }
 };

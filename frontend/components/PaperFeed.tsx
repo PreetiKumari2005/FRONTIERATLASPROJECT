@@ -257,6 +257,7 @@ function GeneratedCover({ title }: { title: string }) {
 const isValidImageSrc = (src: string) => {
   if (!src || src === "null" || src === "None") return false;
   if (src.startsWith('/')) return true;
+  if (src.startsWith('data:image/')) return true;
   try {
     new URL(src);
     return true;
@@ -267,15 +268,18 @@ const isValidImageSrc = (src: string) => {
 
 const PaperThumbnail = memo(
   ({ title, thumbnail }: { title: string; thumbnail: string }) => {
+    const [hasError, setHasError] = useState(false);
+
     return (
       <div className="w-full xl:w-[170px] h-[180px] sm:h-[220px] xl:h-[240px] shrink-0 border border-[#E5E5E0] rounded-md xl:rounded-none overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.07)] relative flex items-center justify-center">
-        {isValidImageSrc(thumbnail) ? (
+        {isValidImageSrc(thumbnail) && !hasError ? (
           <Image
             src={thumbnail}
             alt={title || "Paper thumbnail"}
             fill
             className="object-cover object-top"
             sizes="(max-width: 1280px) 100vw, 170px"
+            onError={() => setHasError(true)}
           />
         ) : (
           <GeneratedCover title={title} />

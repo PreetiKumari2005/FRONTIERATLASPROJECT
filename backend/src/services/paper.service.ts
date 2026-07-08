@@ -30,10 +30,11 @@ const exposeThumbnailUrl = <T extends { thumbnailUrl?: string | null }>(
   paper: T,
 ) => {
   const { thumbnailUrl, ...rest } = paper;
+  const cleanUrl = thumbnailUrl === "FAILED_404" ? null : (thumbnailUrl ?? null);
   return {
     ...rest,
-    thumbnailUrl: thumbnailUrl ?? null,
-    thumbnail_url: thumbnailUrl ?? null,
+    thumbnailUrl: cleanUrl,
+    thumbnail_url: cleanUrl,
   };
 };
 
@@ -374,21 +375,146 @@ export const getPaperBySlug = async (
     async (prisma, _shardId) => {
       return prisma.paper.findUnique({
         where: { slug },
-        include: {
-          authors: { include: { author: true } },
-          models: { include: { model: true } },
-          datasets: { include: { dataset: true } },
-          tasks: { include: { task: true } },
-          methods: { include: { method: true } },
-          conferences: { include: { conference: true } },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          shortTitle: true,
+          abstract: true,
+          tlDr: true,
+          publicationDate: true,
+          submissionDate: true,
+          arxivId: true,
+          doi: true,
+          paperUrl: true,
+          pdfUrl: true,
+          thumbnailUrl: true,
+          sourceUrl: true,
+          projectUrl: true,
+          citationCount: true,
+          referenceCount: true,
+          pageCount: true,
+          paperType: true,
+          status: true,
+          language: true,
+          license: true,
+          createdAt: true,
+          updatedAt: true,
+          githubForks: true,
+          githubStars: true,
+          githubUrl: true,
+          isOfficialCode: true,
+          hfUpvotes: true,
+          trendingScore: true,
+          discoverySource: true,
+          authors: {
+            select: {
+              paper_id: true,
+              author_id: true,
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+          models: {
+            select: {
+              paper_id: true,
+              model_id: true,
+              model: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+          datasets: {
+            select: {
+              paper_id: true,
+              dataset_id: true,
+              dataset: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+          tasks: {
+            select: {
+              paper_id: true,
+              task_id: true,
+              task: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  color: true,
+                },
+              },
+            },
+          },
+          methods: {
+            select: {
+              paper_id: true,
+              method_id: true,
+              method: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+          conferences: {
+            select: {
+              paper_id: true,
+              conference_id: true,
+              conference: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
           rankings: {
-            include: {
-              benchmark: true,
+            select: {
+              id: true,
+              paper_id: true,
+              benchmark_id: true,
+              rank: true,
+              previous_rank: true,
+              updated_at: true,
+              benchmark: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
             },
           },
           sotaClaims: {
-            include: {
-              benchmark: true,
+            select: {
+              id: true,
+              paper_id: true,
+              benchmark_id: true,
+              benchmark: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
             },
           },
         },

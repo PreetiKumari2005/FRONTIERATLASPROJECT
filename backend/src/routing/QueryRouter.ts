@@ -135,7 +135,7 @@ export class QueryRouter {
   async resolveTargetShards(intent: QueryIntent): Promise<TargetShard[]> {
     // Case 1: Paper details - check if we have shard info in intent.filters
     if (intent.entity === "paper" && intent.operation === "findUnique") {
-      return [{ id: ShardId.SHARD_5, type: "primary" }];
+      return this.getAllShards();
     }
 
     // Case 2: Category page (has intent.category)
