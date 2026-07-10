@@ -27,11 +27,6 @@ type Env = {
     DATABASE_URL: string;
     UPSTASH_REDIS_REST_URL: string;
     UPSTASH_REDIS_REST_TOKEN: string;
-    SHARD_1_DATABASE_URL?: string;
-    SHARD_2_DATABASE_URL?: string;
-    SHARD_3_DATABASE_URL?: string;
-    SHARD_4_DATABASE_URL?: string;
-    SHARD_5_DATABASE_URL?: string;
     QUERY_TIMEOUT_MS?: string;
   };
   Variables: {
@@ -61,11 +56,6 @@ app.use(
 // 2. Per-Request Middleware
 app.use("*", async (c, next) => {
   const DATABASE_URL = c.env.DATABASE_URL as string;
-  const SHARD_1_DATABASE_URL = (c.env.SHARD_1_DATABASE_URL || DATABASE_URL) as string;
-  const SHARD_2_DATABASE_URL = (c.env.SHARD_2_DATABASE_URL || DATABASE_URL) as string;
-  const SHARD_3_DATABASE_URL = (c.env.SHARD_3_DATABASE_URL || DATABASE_URL) as string;
-  const SHARD_4_DATABASE_URL = (c.env.SHARD_4_DATABASE_URL || DATABASE_URL) as string;
-  const SHARD_5_DATABASE_URL = (c.env.SHARD_5_DATABASE_URL || DATABASE_URL) as string;
   const QUERY_TIMEOUT_MS = c.env.QUERY_TIMEOUT_MS;
 
   const REDIS_URL = c.env.UPSTASH_REDIS_REST_URL;
@@ -77,11 +67,6 @@ redisManager.connect(REDIS_URL, REDIS_TOKEN);
 
   // Strip quotes if they were included in the .dev.vars file
   const cleanUrl = DATABASE_URL ? DATABASE_URL.replace(/^"|"$/g, "") : "";
-  const cleanShard1Url = SHARD_1_DATABASE_URL ? SHARD_1_DATABASE_URL.replace(/^"|"$/g, "") : "";
-  const cleanShard2Url = SHARD_2_DATABASE_URL ? SHARD_2_DATABASE_URL.replace(/^"|"$/g, "") : "";
-  const cleanShard3Url = SHARD_3_DATABASE_URL ? SHARD_3_DATABASE_URL.replace(/^"|"$/g, "") : "";
-  const cleanShard4Url = SHARD_4_DATABASE_URL ? SHARD_4_DATABASE_URL.replace(/^"|"$/g, "") : "";
-  const cleanShard5Url = SHARD_5_DATABASE_URL ? SHARD_5_DATABASE_URL.replace(/^"|"$/g, "") : "";
 
   const isNeon = cleanUrl.includes("neon.tech");
   let prisma: PrismaClient;
@@ -102,13 +87,9 @@ redisManager.connect(REDIS_URL, REDIS_TOKEN);
   }
 
   // DatabaseManager and QueryRouter
-  const databaseManager = new DatabaseManager({
-    SHARD_1_DATABASE_URL: cleanShard1Url,
-    SHARD_2_DATABASE_URL: cleanShard2Url,
-    SHARD_3_DATABASE_URL: cleanShard3Url,
-    SHARD_4_DATABASE_URL: cleanShard4Url,
-    SHARD_5_DATABASE_URL: cleanShard5Url,
-  });
+ const databaseManager = new DatabaseManager({
+  DATABASE_URL: cleanUrl,
+});
   const queryRouter = new QueryRouter(databaseManager, QUERY_TIMEOUT_MS);
 
   c.set("prisma", prisma);
