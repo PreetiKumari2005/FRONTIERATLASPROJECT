@@ -7,6 +7,7 @@ import SearchBar from "@/components/SearchBar";
 import { usePathname } from "next/navigation";
 import { useScrollThreshold } from "@/lib/useScroll";
 import Sidebar from "@/components/Sidebar";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 export default function Navbar({
@@ -23,8 +24,6 @@ export default function Navbar({
   const isTasksActive = pathname.startsWith("/tasks");
   const isBenchmarksActive = pathname.startsWith("/benchmarks");
   const isModelsActive = pathname.startsWith("/models");
-  const isDatasetsActive = pathname.startsWith("/datasets");
-  const isAuthorsActive = pathname.startsWith("/authors");
 
   const isHomePage = pathname === "/";
   const isCategoryPage = pathname.startsWith("/category/");
@@ -88,14 +87,24 @@ export default function Navbar({
         </div>
 
         {/* Center — Search Bar (Desktop) */}
-        <div className="hidden lg:flex flex-1 items-center justify-center max-w-[240px] xl:max-w-[400px]">
-          {shouldShowSearch && (
-            <SearchBar variant="compact" placeholder="Search..." initialQuery="" layoutIdPrefix="global" />
-          )}
+        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center justify-center w-[240px] xl:w-[400px]">
+          <AnimatePresence>
+            {shouldShowSearch && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="w-full"
+              >
+                <SearchBar variant="compact" placeholder="Search..." initialQuery="" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Center — Nav Links (Desktop) */}
-        <div className="hidden lg:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-6 ml-auto">
           <Link
             href="/tasks"
             data-text="Tasks"
@@ -139,28 +148,6 @@ export default function Navbar({
             }`}
           >
             Models
-          </Link>
-          <Link
-            href="/datasets"
-            data-text="Datasets"
-            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
-              isDatasetsActive
-                ? "text-[#F55036] font-bold"
-                : "text-[#555555] font-medium hover:text-[#F55036]"
-            }`}
-          >
-            Datasets
-          </Link>
-          <Link
-            href="/authors"
-            data-text="Authors"
-            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
-              isAuthorsActive
-                ? "text-[#F55036] font-bold"
-                : "text-[#555555] font-medium hover:text-[#F55036]"
-            }`}
-          >
-            Authors
           </Link>
         </div>
 
