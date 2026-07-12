@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Flame,
   Clock,
@@ -97,6 +98,7 @@ export default function Sidebar({
   initialActive = "Trending Papers",
 }: SidebarProps) {
   const [activeItem, setActiveItem] = useState(initialActive);
+  const router = useRouter();
 
   useEffect(() => {
     setActiveItem(initialActive);
