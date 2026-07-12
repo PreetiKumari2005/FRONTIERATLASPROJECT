@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { PrismaClient } from "./generated/prisma/client.js";
 import { DatabaseManager } from "./database/DatabaseManager.js";
 import { QueryRouter } from "./routing/index.js";
 import { redisManager } from "./lib/redis";
