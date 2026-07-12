@@ -14,10 +14,16 @@ import PaperFeed from "@/components/PaperFeed";
 import ModelCard from "@/components/ModelCard";
 import ModelSearchInput from "@/components/ModelSearchInput";
 import Navbar from "@/components/Navbar";
-import { getModels, type ModelItem } from "@/lib/models";
+import {
+  getModels,
+  type ModelItem,
+  type ModelPaperRaw,
+} from "@/lib/models";
+import type { Paper, GetPapersResult } from "@/lib/paperApi";
 import { getTasks, type TaskItem } from "@/lib/tasks";
 
 const LIMIT = 12;
+
 
 
 type SortKey = "papers" | "name" | "newest" | "oldest";
@@ -59,6 +65,54 @@ function formatCompact(value: number) {
     notation: value >= 1000 ? "compact" : "standard",
     maximumFractionDigits: value >= 1000 ? 1 : 0,
   }).format(value);
+}
+
+function mapModelPaper(raw: ModelPaperRaw): Paper {
+  const rawThumbnail = raw.thumbnailUrl ?? "";
+  let thumbnail = "";
+
+  if (rawThumbnail && rawThumbnail !== "FAILED_404") {
+    if (
+      rawThumbnail.startsWith("/9j/") ||
+      rawThumbnail.startsWith("iVBORw0KGgo")
+    ) {
+      thumbnail = `data:image/jpeg;base64,${rawThumbnail}`;
+    } else if (
+      rawThumbnail.startsWith("/") ||
+      rawThumbnail.startsWith("http") ||
+      rawThumbnail.startsWith("data:")
+    ) {
+      thumbnail = rawThumbnail;
+    }
+  }
+
+  return {
+    id: raw.id,
+    slug: raw.slug,
+    title: raw.title,
+    thumbnail,
+    authors:
+      raw.authors.map(({ author }) => author.name).join(", ") ||
+      "Unknown Authors",
+    date: raw.publicationDate
+      ? new Date(raw.publicationDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "Unknown Date",
+    description: raw.abstract ?? "",
+    sota: raw.sotaClaims
+      .map(({ benchmark }) => `SOTA on ${benchmark.name}`)
+      .join(" • "),
+    tags: raw.tasks.map(({ task }) => task.name),
+    additionalTags: raw.methods.map(({ method }) => method.name),
+    upvotes: String(raw.githubStars ?? 0),
+    repo: String(raw.githubForks ?? 0),
+    citations: raw.citationCount ?? 0,
+    conference: raw.conferences[0]?.conference.name ?? "",
+    githubUrl: raw.githubUrl ?? undefined,
+  };
 }
 
 export default function ModelsPage() {
@@ -179,6 +233,40 @@ function ModelsPageInner() {
     () => allModels.reduce((sum, model) => sum + model.githubStars, 0),
     [allModels],
   );
+
+
+  const modelPapers = useMemo<GetPapersResult>(() => {
+  const sourceModels = modelSlug
+    ? allModels.filter((model) => model.slug === modelSlug)
+    : allModels;
+
+  const uniquePapers = new Map<string, Paper>();
+
+  for (const model of sourceModels) {
+    for (const rawPaper of model.papers ?? []) {
+      if (activeTask !== "all") {
+        const hasTask = rawPaper.tasks.some(
+          ({ task }) => task.slug === activeTask,
+        );
+
+        if (!hasTask) continue;
+      }
+
+      if (!uniquePapers.has(rawPaper.id)) {
+        uniquePapers.set(rawPaper.id, mapModelPaper(rawPaper));
+      }
+    }
+  }
+
+  const papers = Array.from(uniquePapers.values());
+
+  return {
+    papers,
+    total: papers.length,
+    page: 1,
+    hasMore: false,
+  };
+}, [allModels, modelSlug, activeTask]);
 
   const selectedSortLabel = SORT_OPTIONS.find((option) => option.key === sortBy)?.label ?? "Sort";
 
@@ -423,10 +511,7 @@ function ModelsPageInner() {
             </div>
           </div>
 
-          <PaperFeed
-            selectedTag={activeTask === "all" ? undefined : tasks.find((task) => task.slug === activeTask)?.name}
-            filterParams={{ task: activeTask === "all" ? undefined : activeTask, model: modelSlug }}
-          />
+          <PaperFeed initialPapers={modelPapers} />
         </section>
       </div>
       </div>

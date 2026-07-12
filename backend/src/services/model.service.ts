@@ -30,9 +30,22 @@ export const getModels = async (
                 id: true,
                 title: true,
                 slug: true,
+                abstract: true,
+                thumbnailUrl: true,
+                publicationDate: true,
                 citationCount: true,
                 githubStars: true,
-                publicationDate: true,
+                githubForks: true,
+                githubUrl: true,
+                authors: {
+                  select: {
+                    author: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
                 tasks: {
                   select: {
                     task: {
@@ -41,6 +54,33 @@ export const getModels = async (
                         name: true,
                         slug: true,
                         color: true,
+                      },
+                    },
+                  },
+                },
+                methods: {
+                  select: {
+                    method: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                conferences: {
+                  select: {
+                    conference: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                sotaClaims: {
+                  select: {
+                    benchmark: {
+                      select: {
+                        name: true,
                       },
                     },
                   },
@@ -138,6 +178,7 @@ export const getModels = async (
       latestPaperTitle,
       latestPaperSlug,
       tasks: topTasks,
+      papers: dedupPapers.map((relation) => relation.paper),
     };
   });
 };
