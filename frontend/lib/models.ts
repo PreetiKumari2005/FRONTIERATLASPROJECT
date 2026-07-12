@@ -7,6 +7,24 @@ export interface ModelTask {
   color: string | null;
 }
 
+export interface ModelPaperRaw {
+  id: string;
+  slug: string;
+  title: string;
+  abstract: string | null;
+  thumbnailUrl: string | null;
+  publicationDate: string | null;
+  citationCount: number;
+  githubStars: number | null;
+  githubForks: number | null;
+  githubUrl: string | null;
+  authors: { author: { name: string } }[];
+  tasks: { task: ModelTask }[];
+  methods: { method: { name: string } }[];
+  conferences: { conference: { name: string } }[];
+  sotaClaims: { benchmark: { name: string } }[];
+}
+
 export interface BackendModelItem {
   id: string;
   name: string;
@@ -19,6 +37,7 @@ export interface BackendModelItem {
   latestPaperTitle: string | null;
   latestPaperSlug: string | null;
   tasks?: ModelTask[];
+  papers?: ModelPaperRaw[];
 }
 
 export interface ModelItem {
@@ -33,6 +52,7 @@ export interface ModelItem {
   latestPaperTitle: string | null;
   latestPaperSlug: string | null;
   tasks: ModelTask[];
+  papers?: ModelPaperRaw[];
 }
 
 export interface ModelPaper {
@@ -92,6 +112,7 @@ export async function getModels(): Promise<ModelItem[]> {
     latestPaperTitle: m.latestPaperTitle,
     latestPaperSlug: m.latestPaperSlug,
     tasks: m.tasks ?? [],
+    papers: m.papers ?? [],
   }));
 }
 
