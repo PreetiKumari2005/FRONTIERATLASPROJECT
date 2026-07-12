@@ -10,6 +10,7 @@ import {
   FileText,
   Sparkles,
   Github,
+  Trophy,
   ChevronDown,
   ChevronUp,
   Calendar,
@@ -17,8 +18,6 @@ import {
   Quote,
   Star,
   GitBranch,
-  Heart,
-  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -72,6 +71,7 @@ function formatCompactNumber(n: number): string {
 }
 
 type CitationFormat = "bibtex" | "apa" | "mla" | "chicago";
+type ChipVariant = "tasks" | "methods" | "models" | "datasets";
 
 const CITATION_FORMATS: { key: CitationFormat; label: string }[] = [
   { key: "bibtex", label: "BibTeX" },
@@ -92,6 +92,7 @@ function parseGitHubRepo(url: string | null): string | null {
   }
   return null;
 }
+
 
 function generateCitation(paper: PaperDetailType, format: CitationFormat): string {
   const year = getCitationYear(paper.publicationDate);
@@ -124,6 +125,55 @@ function generateCitation(paper: PaperDetailType, format: CitationFormat): strin
     case "chicago":
       return `${authorStr}. ${year}. "${title}." ${source}.${doi ? ` https://doi.org/${paper.doi}.` : ""}`;
   }
+}
+
+function Section({
+  title,
+  meta,
+  children,
+}: {
+  title: string;
+  meta?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-t border-[#ECE7DD] pt-5 first:border-t-0 first:pt-0">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-[15px] font-bold tracking-tight text-[#111111]">{title}</h2>
+        {meta ? <div className="text-[11px] text-[#8B8B8B]">{meta}</div> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SidebarCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#E5E5E0] bg-white shadow-[0_1px_3px_rgba(17,17,17,0.04)] transition-shadow duration-200 hover:shadow-[0_4px_18px_rgba(17,17,17,0.07)]">
+      <div className="flex items-center gap-2.5 border-b border-[#EFECE6] bg-[#FBFBF9] px-5 py-3.5">
+        {icon ? <span className="shrink-0 text-[#8B8B8B]">{icon}</span> : null}
+        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#555555]">{title}</h3>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+}
+
+function MetadataRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-[#F2EEE6] py-3 last:border-b-0 last:pb-0 first:pt-0">
+      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8B8B8B]">{label}</span>
+      <div className="min-w-0 text-right text-[13px] font-medium leading-snug text-[#111111] break-words">{value}</div>
+    </div>
+  );
 }
 
 function CitationPreview({ text, format }: { text: string; format: CitationFormat }) {
@@ -179,90 +229,82 @@ function CitationPreview({ text, format }: { text: string; format: CitationForma
 
 function RepositoryPanel({ paper }: { paper: PaperDetailType }) {
   const repoName = parseGitHubRepo(paper.githubUrl);
+  const hasRepo = !!paper.githubUrl;
   const hasStars = paper.githubStars != null && paper.githubStars > 0;
   const hasForks = paper.githubForks != null && paper.githubForks > 0;
-  const hasHfUpvotes = paper.hfUpvotes != null && paper.hfUpvotes > 0;
 
-  if (!paper.githubUrl && !hasHfUpvotes) {
+  if (!hasRepo) {
     return (
-      <div>
-        <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
-          <Github size={14} className="text-[#8B8B8B]" />
-          <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#555555] m-0">Repository</h3>
-        </div>
-        <div className="pt-4 pb-2 flex flex-col items-center text-center">
+      <SidebarCard title="Repository" icon={<Github size={14} />}>
+        <div className="flex flex-col items-center rounded-xl border border-dashed border-[#E5E5E0] bg-[#FBFBF9] px-4 py-9 text-center">
           <Github size={22} className="mb-2.5 text-[#DCDCD7]" strokeWidth={1.5} />
-          <p className="text-[13px] font-semibold text-[#555555]">No repository available</p>
+          <p className="text-[13px] font-semibold text-[#555555]">No official repository available</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-[#8B8B8B]">
+            A linked GitHub repository has not been added for this paper.
+          </p>
         </div>
-      </div>
+      </SidebarCard>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
-        <Github size={14} className="text-[#8B8B8B]" />
-        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#555555] m-0">Repository</h3>
-      </div>
-      <div className="pt-4 flex flex-col gap-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0 flex flex-col gap-1.5">
-            <p className="font-mono text-[13px] font-bold text-[#171717] m-0 truncate">
-              {repoName ?? "GitHub Repository"}
-            </p>
-            <div className="flex items-center gap-2">
-              {paper.isOfficialCode === true && (
-                <span className="inline-flex items-center rounded-full border border-[#BAE6FD] bg-[#E0F2FE] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#0369A1]">
+    <SidebarCard title="Repository" icon={<Github size={14} />}>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-[#EAE6DE] bg-[#FCFBF8] p-4 transition-colors hover:border-[#E5D5C8] hover:bg-[#FFF8F5]">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate font-mono text-[14px] font-bold text-[#111111]">
+                {repoName ?? "GitHub Repository"}
+              </p>
+              {paper.isOfficialCode === true ? (
+                <span className="mt-2 inline-flex items-center rounded-full border border-[#BAE6FD] bg-[#E0F2FE] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#0369A1]">
                   Official
                 </span>
-              )}
-              {hasStars && (
-                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#444444]">
-                  <Star size={12} fill="#FF5A1F" stroke="#FF5A1F" />
-                  {formatCompactNumber(paper.githubStars!)}
-                </span>
-              )}
-              {hasForks && (
-                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#444444]">
-                  <GitBranch size={12} className="text-[#FF5A1F]" />
-                  {formatCompactNumber(paper.githubForks!)}
-                </span>
-              )}
+              ) : null}
             </div>
+            <Github size={18} className="shrink-0 text-[#111111]" />
           </div>
-          <Github size={18} className="shrink-0 text-[#8B8B8B]" />
+
+          {(hasStars || hasForks) && (
+            <div className="mt-4 flex flex-wrap gap-4 border-t border-[#EFECE6] pt-3.5">
+              {hasStars ? (
+                <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#444444]">
+                  <Star size={13} className="text-[#F55036]" fill="#F55036" />
+                  {formatCompactNumber(paper.githubStars!)}
+                  <span className="font-medium text-[#8B8B8B]">stars</span>
+                </span>
+              ) : null}
+              {hasForks ? (
+                <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#444444]">
+                  <GitBranch size={13} className="text-[#F55036]" />
+                  {formatCompactNumber(paper.githubForks!)}
+                  <span className="font-medium text-[#8B8B8B]">forks</span>
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
 
-        {paper.hfUpvotes != null && (
-          <div className="flex items-center gap-2.5 py-2.5 border-t border-b border-[#EDE8DF]">
-            <Heart size={15} className="text-[#FF5A1F]" />
-            <span className="text-[12.5px] font-semibold text-[#444444]">
-              {formatCompactNumber(paper.hfUpvotes)}
-              <span className="font-medium text-[#8B8B8B] ml-1">Hugging Face upvotes</span>
-            </span>
-          </div>
-        )}
+        {paper.isOfficialCode != null ? (
+          <p className="text-[12px] font-medium text-[#6F665D]">
+            {paper.isOfficialCode ? "Official implementation from the authors" : "Community-maintained repository"}
+          </p>
+        ) : null}
 
-        {paper.githubUrl && (
-          <>
-            <p className="text-[11.5px] font-medium text-[#6F665D] m-0">
-              {paper.isOfficialCode ? "Official implementation from the authors" : "Community-maintained repository"}
-            </p>
-            <a
-              href={paper.githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[#E0DDD6] bg-transparent px-4 py-2.5 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)]"
-            >
-              Open Repository
-              <ExternalLink size={13} />
-            </a>
-          </>
-        )}
+        <a
+          href={paper.githubUrl!}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#E5E5E0] bg-white px-4 py-2.5 text-[13px] font-bold text-[#111111] no-underline transition-all hover:border-[#FF5A1F]/30 hover:bg-[#FFF7F3] hover:text-[#F55036]"
+        >
+          Open Repository
+          <ExternalLink size={14} />
+        </a>
       </div>
-    </div>
+    </SidebarCard>
   );
 }
+
 
 function CitationPanel({
   paper,
@@ -281,13 +323,9 @@ function CitationPanel({
   const isCopied = copiedFormat === selectedFormat;
 
   return (
-    <div>
-      <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
-        <Quote size={14} className="text-[#8B8B8B]" />
-        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#555555] m-0">Citation</h3>
-      </div>
-      <div className="pt-4 flex flex-col gap-3.5">
-        <div className="flex rounded-lg border border-[#E0DDD6] bg-[#F6F5F0] p-[3px]">
+    <SidebarCard title="Citation" icon={<Quote size={14} />}>
+      <div className="space-y-4">
+        <div className="flex rounded-lg border border-[#E5E5E0] bg-[#F8F7F2] p-1">
           {CITATION_FORMATS.map((fmt) => {
             const active = selectedFormat === fmt.key;
             return (
@@ -295,10 +333,10 @@ function CitationPanel({
                 key={fmt.key}
                 type="button"
                 onClick={() => onFormatChange(fmt.key)}
-                className={`flex-1 rounded-[5px] px-1.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.06em] transition-all ${
+                className={`flex-1 rounded-md px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] transition-all ${
                   active
-                    ? "bg-white text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-                    : "bg-transparent text-[#8B8B8B] hover:text-[#555555]"
+                    ? "bg-white text-[#111111] shadow-sm"
+                    : "text-[#8B8B8B] hover:text-[#555555]"
                 }`}
               >
                 {fmt.label}
@@ -307,33 +345,33 @@ function CitationPanel({
           })}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-[#EDE8DF] p-3.5">
+        <div className="overflow-hidden rounded-xl border border-[#EAE6DE] bg-[#FCFBF8] p-4">
           <CitationPreview text={citationText} format={selectedFormat} />
         </div>
 
         <button
           type="button"
           onClick={() => onCopy(selectedFormat)}
-          className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all ${
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-bold transition-all duration-200 ${
             isCopied
               ? "scale-[0.98] border-[#A7F3D0] bg-[#ECFDF5] text-[#047857]"
-              : "border-[#E0DDD6] bg-transparent text-[#444444] hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)]"
+              : "border-[#E5E5E0] bg-white text-[#111111] hover:border-[#FF5A1F]/30 hover:bg-[#FFF7F3] hover:text-[#F55036]"
           }`}
         >
           {isCopied ? (
             <>
-              <Check size={14} />
+              <Check size={15} className="animate-[pulse_0.4s_ease-in-out_1]" />
               Copied!
             </>
           ) : (
             <>
-              <Copy size={14} />
+              <Copy size={15} className="text-[#F55036]" />
               Copy citation
             </>
           )}
         </button>
       </div>
-    </div>
+    </SidebarCard>
   );
 }
 
@@ -357,11 +395,11 @@ function PaperMetadataPanel({
     rows.push({
       label: "DOI",
       value: doiUrl ? (
-        <a href={doiUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:underline text-[13px] font-medium">
+        <a href={doiUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:text-[#F55036] hover:underline">
           {paper.doi}
         </a>
       ) : (
-        <span className="text-[13px] font-medium text-[#171717]">{paper.doi}</span>
+        paper.doi
       ),
     });
   }
@@ -369,47 +407,56 @@ function PaperMetadataPanel({
     rows.push({
       label: "arXiv",
       value: arxivUrl ? (
-        <a href={arxivUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:underline text-[13px] font-medium">
+        <a href={arxivUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:text-[#F55036] hover:underline">
           {paper.arxivId}
         </a>
       ) : (
-        <span className="text-[13px] font-medium text-[#171717]">{paper.arxivId}</span>
+        paper.arxivId
       ),
     });
   }
-  if (paper.license) rows.push({ label: "License", value: <span className="text-[13px] font-medium text-[#171717]">{paper.license}</span> });
-  if (paper.discoverySource) rows.push({ label: "Source", value: <span className="text-[13px] font-medium text-[#171717]">{paper.discoverySource}</span> });
-  if (paper.referenceCount > 0) rows.push({ label: "References", value: <span className="text-[13px] font-medium text-[#171717]">{formatCompactNumber(paper.referenceCount)}</span> });
-  if (paper.citationCount > 0) rows.push({ label: "Citations", value: <span className="text-[13px] font-medium text-[#171717]">{formatCompactNumber(paper.citationCount)}</span> });
-  if (paper.hfUpvotes != null && paper.hfUpvotes > 0) rows.push({ label: "HF Upvotes", value: <span className="text-[13px] font-medium text-[#171717]">{formatCompactNumber(paper.hfUpvotes)}</span> });
-  if (categoryLabels.length > 0) rows.push({ label: "Categories", value: <span className="text-[13px] font-medium text-[#171717]">{categoryLabels.join(", ")}</span> });
-  if (conferenceLabels.length > 0) rows.push({ label: "Venue", value: <span className="text-[13px] font-medium text-[#171717]">{conferenceLabels.join(", ")}</span> });
+  if (paper.license) rows.push({ label: "License", value: paper.license });
+  if (paper.discoverySource) rows.push({ label: "Source", value: paper.discoverySource });
+  if (paper.referenceCount > 0) rows.push({ label: "References", value: formatCompactNumber(paper.referenceCount) });
+  if (paper.citationCount > 0) rows.push({ label: "Citations", value: formatCompactNumber(paper.citationCount) });
+  if (categoryLabels.length > 0) rows.push({ label: "Categories", value: categoryLabels.join(", ") });
+  if (conferenceLabels.length > 0) rows.push({ label: "Conferences", value: conferenceLabels.join(", ") });
   if (paper.submissionDate && paper.submissionDate !== paper.publicationDate) {
     rows.push({ label: "Submitted", value: formatDate(paper.submissionDate) });
   }
-  if (paper.paperType) rows.push({ label: "Type", value: <span className="text-[13px] font-medium text-[#171717]">{paper.paperType}</span> });
-  if (paper.status) rows.push({ label: "Status", value: <span className="text-[13px] font-medium text-[#171717]">{paper.status}</span> });
-  if (paper.language) rows.push({ label: "Language", value: <span className="text-[13px] font-medium text-[#171717]">{paper.language}</span> });
-  if (paper.pageCount != null) rows.push({ label: "Pages", value: <span className="text-[13px] font-medium text-[#171717]">{paper.pageCount}</span> });
+  if (paper.paperType) rows.push({ label: "Type", value: paper.paperType });
+  if (paper.status) rows.push({ label: "Status", value: paper.status });
+  if (paper.language) rows.push({ label: "Language", value: paper.language });
+  if (paper.pageCount != null) rows.push({ label: "Pages", value: paper.pageCount });
 
   if (rows.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
-        <BookOpen size={14} className="text-[#8B8B8B]" />
-        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#555555] m-0">Paper Details</h3>
-      </div>
-      <div className="pt-1">
-        {rows.map((row, i) => (
-          <div
-            key={row.label}
-            className={`flex items-start justify-between gap-4 py-3 ${i < rows.length - 1 ? "border-b border-[#F2EEE6]" : ""}`}
-          >
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8B8B8B]">{row.label}</span>
-            <div className="text-right break-words max-w-[60%]">{row.value}</div>
-          </div>
+    <SidebarCard title="Paper Details" icon={<BookOpen size={14} />}>
+      <div>
+        {rows.map((row) => (
+          <MetadataRow key={row.label} label={row.label} value={row.value} />
         ))}
+      </div>
+    </SidebarCard>
+  );
+}
+
+function InfoTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-[13.5px] text-[#555555]">
+      <div className="shrink-0 text-[#8B8B8B]">{icon}</div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-bold text-[#111111]">{value}</span>
+        <span className="text-[#8B8B8B] font-medium">{label}</span>
       </div>
     </div>
   );
@@ -417,18 +464,63 @@ function PaperMetadataPanel({
 
 function TrendingBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,90,31,0.1)] px-3 py-1 text-[12px] font-bold text-[#FF5A1F]">
-      <Sparkles size={13} fill="#FF5A1F" stroke="none" />
-      Trending
-    </span>
+    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FF5A1F]/10 px-3 py-1 text-[12px] font-bold text-[#FF5A1F]">
+      <Sparkles size={13} className="fill-[#FF5A1F]" />
+      <span>Trending</span>
+    </div>
+  );
+}
+
+function RankingHighlight({ rank, benchmarkName }: { rank: number; benchmarkName: string }) {
+  return (
+    <div className="flex items-center gap-2 text-[14px] font-semibold text-[#111111]">
+      <span className="text-[#FF5A1F]">#{rank}</span>
+      <span className="text-[#8B8B8B] font-medium">on</span>
+      <span className="hover:text-[#FF5A1F] transition-colors cursor-pointer border-b border-transparent hover:border-[#FF5A1F]/30">{benchmarkName}</span>
+    </div>
   );
 }
 
 function RankDisplay({ rank }: { rank: number }) {
+  const isTopThree = rank <= 3;
+
   return (
     <div className="flex items-center gap-1.5">
-      <span className="tabular-nums tracking-tight font-black text-[#171717]">#{rank}</span>
+      {rank === 1 ? <Trophy size={15} className="shrink-0 text-[#B48C52]" strokeWidth={2.25} /> : null}
+      <span
+        className={`tabular-nums tracking-tight ${
+          rank === 1
+            ? "text-[22px] font-black text-[#FF5A1F]"
+            : rank === 2
+              ? "text-[20px] font-black text-[#555555]"
+              : rank === 3
+                ? "text-[18px] font-bold text-[#6B6258]"
+                : isTopThree
+                  ? "text-[17px] font-bold text-[#111111]"
+                  : "text-[15px] font-semibold text-[#444444]"
+        }`}
+      >
+        #{rank}
+      </span>
     </div>
+  );
+}
+
+function RankDelta({ rank, previousRank }: { rank: number; previousRank: number | null }) {
+  if (previousRank == null || previousRank === rank) return null;
+
+  const improved = rank < previousRank;
+  const delta = Math.abs(previousRank - rank);
+
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+        improved ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#FEF2F2] text-[#B91C1C]"
+      }`}
+    >
+      {improved ? "↑" : "↓"}
+      {delta}
+    </span>
   );
 }
 
@@ -447,56 +539,81 @@ function BenchmarksSection({
   const showRankDelta = sortedRankings.some((ranking) => ranking.previous_rank != null);
 
   return (
-    <div className="flex flex-col gap-6">
-      <h2 className="section-label">BENCHMARKS</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex min-w-0 flex-1 items-center gap-4">
+          BENCHMARKS
+          <div className="h-px flex-1 bg-[#E5E5E0]" />
+        </h2>
+        {sortedRankings.length > 0 ? (
+          <span className="shrink-0 text-[11px] font-bold text-[#8B8B8B]">
+            {sortedRankings.length} result{sortedRankings.length !== 1 ? "s" : ""}
+          </span>
+        ) : null}
+      </div>
 
-      {sortedRankings.length > 0 || sotaClaims.length > 0 ? (
+      {sortedRankings.length > 0 ? (
         <>
-          {/* Desktop table */}
-          <div className="hidden md:block">
+          <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E0] bg-white shadow-[0_1px_3px_rgba(17,17,17,0.04)] md:block">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#E5E5E0]">
-                  <th className="w-[88px] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">Rank</th>
-                  <th className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">Benchmark</th>
-                  <th className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">Model</th>
-                  {showRankDelta && <th className="w-[88px] px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">Change</th>}
-                  <th className="w-[108px] px-5 py-3.5 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">Compare</th>
+                <tr className="border-b border-[#EDE8DF] bg-[#FBFBF9]">
+                  <th className="w-[88px] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
+                    Rank
+                  </th>
+                  <th className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
+                    Benchmark
+                  </th>
+                  <th className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
+                    Model
+                  </th>
+                  {showRankDelta ? (
+                    <th className="w-[88px] px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
+                      Change
+                    </th>
+                  ) : null}
+                  <th className="w-[108px] px-5 py-3.5 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
+                    Compare
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedRankings.map((ranking) => {
                   const isSota = sotaBenchmarkIds.has(ranking.benchmark_id);
+
                   return (
-                    <tr key={ranking.id} className="border-b border-[#F2EEE6] transition-colors hover:bg-[rgba(255,90,31,0.02)]">
-                      <td className="px-5 py-4">
+                    <tr
+                      key={ranking.id}
+                      className="group border-b border-[#F2EEE6] last:border-b-0 transition-colors hover:bg-[#FFF8F5]"
+                    >
+                      <td className="px-5 py-4 align-middle">
                         <RankDisplay rank={ranking.rank} />
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[14px] font-semibold text-[#171717]">{ranking.benchmark.name}</span>
-                          {isSota && (
+                      <td className="px-4 py-4 align-middle">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                          <span className="text-[14px] font-semibold leading-snug text-[#111111] transition-colors group-hover:text-[#4A7AA0]">
+                            {ranking.benchmark.name}
+                          </span>
+                          {isSota ? (
                             <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
+                              <Trophy size={10} className="shrink-0" />
                               SOTA
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 align-middle">
                         <span className="text-[13px] font-medium text-[#555555]">{modelName ?? "—"}</span>
                       </td>
-                      {showRankDelta && (
-                        <td className="px-4 py-4">
-                          {ranking.previous_rank != null && ranking.previous_rank !== ranking.rank && (
-                            <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${ranking.rank < ranking.previous_rank ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#FEF2F2] text-[#B91C1C]"}`}>
-                              {ranking.rank < ranking.previous_rank ? "↑" : "↓"}{Math.abs(ranking.previous_rank - ranking.rank)}
-                            </span>
-                          )}
+                      {showRankDelta ? (
+                        <td className="px-4 py-4 align-middle">
+                          <RankDelta rank={ranking.rank} previousRank={ranking.previous_rank} />
                         </td>
-                      )}
-                      <td className="px-5 py-4 text-right">
-                        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#4A7AA0] opacity-60 transition-opacity hover:opacity-100 cursor-pointer">
-                          Compare →
+                      ) : null}
+                      <td className="px-5 py-4 text-right align-middle">
+                        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#4A7AA0] opacity-70 transition-all group-hover:translate-x-0.5 group-hover:opacity-100">
+                          Compare
+                          <span aria-hidden="true">→</span>
                         </span>
                       </td>
                     </tr>
@@ -506,57 +623,114 @@ function BenchmarksSection({
             </table>
           </div>
 
-          {/* Mobile cards */}
-          <div className="space-y-2 md:hidden">
+          <div className="space-y-3 md:hidden">
             {sortedRankings.map((ranking) => {
               const isSota = sotaBenchmarkIds.has(ranking.benchmark_id);
-              const improved = ranking.previous_rank != null && ranking.rank < ranking.previous_rank;
-              const worsened = ranking.previous_rank != null && ranking.rank > ranking.previous_rank;
+
               return (
-                <div key={ranking.id} className="py-3 border-b border-[#EDE8DF]">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[18px] font-black text-[#FF5A1F]">#{ranking.rank}</span>
-                    </div>
-                    {isSota && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
+                <div
+                  key={ranking.id}
+                  className="rounded-xl border border-[#E5E5E0] bg-white p-4 transition-colors active:bg-[#FFF8F5]"
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <RankDisplay rank={ranking.rank} />
+                    {isSota ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
+                        <Trophy size={10} className="shrink-0" />
                         SOTA
                       </span>
-                    )}
+                    ) : null}
                   </div>
-                  <p className="text-[14px] font-semibold text-[#171717] m-0 mb-1">{ranking.benchmark.name}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11.5px] text-[#8B8B8B]">{modelName ?? "—"}</span>
-                    {improved && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold bg-[#ECFDF5] text-[#047857]">
-                        ↑{Math.abs(ranking.previous_rank! - ranking.rank)}
-                      </span>
-                    )}
-                    {worsened && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold bg-[#FEF2F2] text-[#B91C1C]">
-                        ↓{Math.abs(ranking.previous_rank! - ranking.rank)}
-                      </span>
-                    )}
+                  <p className="text-[15px] font-semibold leading-snug text-[#111111]">{ranking.benchmark.name}</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#F2EEE6] pt-3">
+                    <span className="text-[12px] text-[#8B8B8B]">
+                      Model{" "}
+                      <span className="font-semibold text-[#444444]">{modelName ?? "—"}</span>
+                    </span>
+                    <RankDelta rank={ranking.rank} previousRank={ranking.previous_rank} />
                   </div>
                 </div>
               );
             })}
           </div>
         </>
-      ) : sotaClaims.length > 0 ? (
+      ) : (
         <div className="space-y-3">
           {sotaClaims.map((claim) => (
-            <div key={claim.id} className="flex items-center gap-3 rounded-xl border border-[#F0DECF] bg-[#FFF9F4] px-4 py-3.5">
-              <span className="text-[8px] font-black bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 uppercase">SOTA</span>
+            <div
+              key={claim.id}
+              className="flex items-center gap-3 rounded-xl border border-[#F0DECF] bg-[#FFF9F4] px-4 py-3.5"
+            >
+              <Trophy size={16} className="shrink-0 text-[#B48C52]" />
               <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-[#171717]">{claim.benchmark.name}</p>
+                <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#B48C52]">SOTA claim</span>
+                <p className="text-[14px] font-semibold text-[#111111]">{claim.benchmark.name}</p>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        <span className="text-[11px] text-[#999] italic">Not available</span>
       )}
+    </div>
+  );
+}
+
+function TaxonomyLink({
+  href,
+  label,
+  variant,
+}: {
+  href: string;
+  label: string;
+  variant: ChipVariant;
+}) {
+  const tone = {
+    tasks: "border-[#A7F3D0] bg-[#ECFDF5] text-[#047857]",
+    methods: "border-[#D8B4FE] bg-[#F3E8FF] text-[#6B21A8]",
+    models: "border-[#E5E5E0] bg-white text-[#111111]",
+    datasets: "border-[#BAE6FD] bg-[#E0F2FE] text-[#0369A1]",
+  }[variant];
+
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[12px] font-medium no-underline transition-opacity hover:opacity-85 ${tone}`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function HeroPreview({ paper, previewHref }: { paper: PaperDetailType; previewHref: string | null }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showThumbnail = !!paper.thumbnailUrl && !imageFailed;
+
+  if (!showThumbnail && !previewHref) return null;
+
+  return (
+    <div className="relative group w-full md:w-[220px] lg:w-[260px] shrink-0">
+      <a 
+        href={previewHref || "#"} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className={`block overflow-hidden rounded-[24px] border border-[#E5E5E0] bg-white shadow-card transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl ${!previewHref ? 'pointer-events-none' : ''}`}
+      >
+        {showThumbnail ? (
+          <Image
+            src={paper.thumbnailUrl!}
+            alt={`Preview of ${paper.title}`}
+            width={300}
+            height={400}
+            unoptimized
+            className="aspect-[3/4] h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="flex aspect-[3/4] items-center justify-center bg-[#FBFBF9] p-8 text-center text-[13px] font-medium text-[#8B8B8B]">
+            Open paper preview
+          </div>
+        )}
+      </a>
     </div>
   );
 }
@@ -565,6 +739,7 @@ function RelatedPaperCard({ paper }: { paper: Paper }) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const showThumbnail = !!paper.thumbnail && !thumbnailFailed;
 
+  // Format authors for compact display
   const displayAuthors = (() => {
     if (!paper.authors) return "";
     const list = paper.authors.split(",").map((a) => a.trim());
@@ -573,56 +748,93 @@ function RelatedPaperCard({ paper }: { paper: Paper }) {
   })();
 
   const hasCode = !!paper.githubUrl;
-  const hasConference = !!paper.conference && paper.conference !== "";
+  const visibleTasks = (paper.tags || []).slice(0, 2);
 
   return (
     <Link
       href={`/papers/${paper.slug || paper.id}`}
-      className="related-paper flex rounded-lg no-underline overflow-hidden transition-all hover:bg-[rgba(255,90,31,0.04)]"
+      className="group flex flex-col overflow-hidden rounded-xl border border-[#E5E5E0] bg-white no-underline transition-all duration-200 hover:border-[#F2B7A7] hover:shadow-[0_4px_20px_rgba(245,80,54,0.08)] hover:-translate-y-0.5"
     >
-      <div className="w-[160px] shrink-0 bg-[#EFECE6] rounded-l-lg overflow-hidden flex items-center justify-center relative">
-        {showThumbnail ? (
+      {/* Thumbnail */}
+      {showThumbnail ? (
+        <div className="relative overflow-hidden border-b border-[#F0EBE3] bg-[#FAFAF8]">
           <Image
             src={paper.thumbnail}
             alt={`Preview of ${paper.title}`}
-            width={160}
-            height={120}
+            width={300}
+            height={169}
             unoptimized
-            className="w-full h-full object-cover"
+            className="aspect-[16/9] h-auto w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
             onError={() => setThumbnailFailed(true)}
           />
-        ) : (
-          <div className="w-full p-3.5 flex flex-col gap-1.5">
-            <div className="h-[3px] rounded bg-black/5 w-1/2" />
-            <div className="h-[5px] rounded bg-black/6 w-[90%]" />
-            <div className="h-[5px] rounded bg-black/6 w-[70%]" />
-            <div className="h-[3px] rounded bg-black/4 w-[55%] mt-1" />
+          {/* Gradient overlay for readability */}
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/20 to-transparent" />
+        </div>
+      ) : (
+        /* Placeholder when no thumbnail */
+        <div className="flex items-center justify-center border-b border-[#F0EBE3] bg-[#F8F7F4] h-[80px]">
+          <FileText size={28} className="text-[#D5CFC7]" strokeWidth={1.2} />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col gap-2 p-3.5">
+        {/* Indicator badges */}
+        {(hasCode || paper.conference) && (
+          <div className="flex flex-wrap items-center gap-1">
+            {paper.conference && paper.conference !== "" && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-[3px] bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[9.5px] font-bold uppercase tracking-wide">
+                {paper.conference}
+              </span>
+            )}
+            {hasCode && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-[#F0FDF4] border border-[#BBF7D0] text-[#15803D] text-[9.5px] font-bold">
+                <Github size={8} />
+                Code
+              </span>
+            )}
           </div>
         )}
-      </div>
-      <div className="flex-1 min-w-0 p-2.5 pl-2.5 flex flex-col">
-        <h4 className="text-[13px] font-semibold leading-[1.35] text-[#171717] m-0 mb-1 line-clamp-2 transition-colors group-hover:text-[#FF5A1F]">
+
+        {/* Title */}
+        <h4 className="text-[13.5px] font-semibold leading-[1.4] text-[#111111] transition-colors group-hover:text-[#F55036] line-clamp-3">
           {paper.title}
         </h4>
-        <p className="text-[10.5px] text-[#8B8B8B] m-0 mb-1.5 truncate leading-snug">
-          {displayAuthors || "Unknown"}
-        </p>
-        <div className="flex items-center gap-1.5 flex-wrap mt-auto">
-          {hasConference && (
-            <span className="px-1 py-[1px] rounded-[3px] bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[8.5px] font-bold uppercase leading-tight">
-              {paper.conference}
-            </span>
+
+        {/* Authors */}
+        {displayAuthors && (
+          <p className="text-[11.5px] leading-snug text-[#6B7280] line-clamp-1">
+            {displayAuthors}
+          </p>
+        )}
+
+        {/* Tasks */}
+        {visibleTasks.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {visibleTasks.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-[3px] bg-[#F3E8FF] border border-[#D8B4FE] text-[#6B21A8] text-[10px] font-medium"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer: date + citations */}
+        <div className="mt-auto pt-2 flex items-center justify-between border-t border-[#F3F0EB]">
+          {paper.date ? (
+            <span className="text-[11px] text-[#9CA3AF]">{paper.date}</span>
+          ) : (
+            <span />
           )}
-          {hasCode && (
-            <span className="inline-flex items-center gap-1 px-1 py-[1px] rounded-[3px] bg-[#F0FDF4] border border-[#BBF7D0] text-[#15803D] text-[8.5px] font-bold leading-tight">
-              Code
-            </span>
-          )}
-          <span className="text-[9px] text-[#9CA3AF]">{paper.date || ""}</span>
           {paper.citations > 0 && (
-            <span className="ml-auto inline-flex items-center gap-0.5 text-[9px] text-[#9CA3AF] whitespace-nowrap">
-              <Quote size={8} className="text-[#C0BDB8]" />
-              {formatCompactNumber(paper.citations)}
+            <span className="inline-flex items-center gap-1 text-[11px] text-[#9CA3AF] font-medium">
+              <Quote size={10} className="text-[#C0BDB8]" />
+              {paper.citations >= 1000
+                ? `${(paper.citations / 1000).toFixed(1)}k`
+                : paper.citations}
             </span>
           )}
         </div>
@@ -696,179 +908,97 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
   }, [paper]);
 
   return (
-    <div className={`${atlasUiFont.className} min-h-screen bg-[#F8F7F2] text-[#171717] tracking-tight selection:bg-[rgba(255,90,31,0.16)]`}>
+    <div className={`${atlasUiFont.className} min-h-screen bg-[#F8F7F2] text-[#111111] tracking-tight selection:bg-[#FF5A1F]/20`}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
           body { font-size: 12pt; color: #000; background: #fff; }
           a { color: #000 !important; text-decoration: underline !important; }
         }
-        .section-label {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 11px;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #8B8B8B;
-          margin: 0;
-        }
-        .section-label::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: #E5E5E0;
-        }
-        .section-label-muted {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 10.5px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.11em;
-          color: #B0ABA3;
-          margin: 0;
-        }
-        .section-label-muted::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: #E5E5E0;
-        }
-        .related-paper { transition: all 0.2s ease; }
-        .related-paper:hover .rp-thumb { background: #E4E0D8; }
-        .hover-dim { transition: opacity 0.2s ease; }
-        .hover-dim:hover { opacity: 0.7; }
-        .table-row { transition: background 0.15s ease; }
-        .table-row:hover { background: rgba(255,90,31,0.02); }
-        .related-paper h4 { transition: color 0.2s ease; }
-        .related-paper:hover h4 { color: #FF5A1F !important; }
       `}</style>
 
       <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 md:px-12 lg:px-16 lg:py-6">
-
-        {/* Breadcrumb */}
-        <nav className="mb-5 lg:mb-6 flex items-center gap-2 text-[12.5px] font-semibold text-[#8B8B8B]" aria-label="Breadcrumb">
-          <Link href="/" className="transition-colors hover:text-[#FF5A1F] no-underline text-[#8B8B8B]">Trending</Link>
+        {/* Breadcrumbs */}
+        <nav className="no-print mb-6 lg:mb-10 flex items-center gap-2 text-[12.5px] font-semibold text-[#8B8B8B]" aria-label="Breadcrumb">
+          <Link href="/" className="transition-colors hover:text-[#FF5A1F]">Trending</Link>
           <span className="text-[#DCDCD7] font-normal" aria-hidden="true">/</span>
           <span className="text-[#555555] truncate max-w-[200px] sm:max-w-none">
             {paper.arxivId ? `arXiv:${paper.arxivId}` : "Research"}
           </span>
         </nav>
 
-        {/* Grid: Main + Sidebar */}
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px] xl:gap-10">
-
-          {/* ===== MAIN CONTENT ===== */}
-          <main className="space-y-8 lg:space-y-10 min-w-0">
-
-            {/* HEADER */}
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex-1 space-y-4">
-
-                {/* Badge row */}
-                <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px] xl:gap-12">
+          <main className="space-y-10 lg:space-y-12 min-w-0">
+            {/* Header Section */}
+            <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex-1 space-y-6">
+                <div className="flex flex-wrap items-center gap-4">
                   {paper.trendingScore && paper.trendingScore > 0 ? <TrendingBadge /> : null}
-                  {paper.arxivId && (
-                    <span className="inline-flex items-center rounded-full border border-[#E0DDD6] bg-[#F6F5F0] px-3 py-1 text-[11px] font-bold tracking-wider text-[#555555]">
-                      arXiv:{paper.arxivId}
-                    </span>
-                  )}
-                  {paper.conferences.slice(0, 2).map((c) => (
-                    <span key={c.conference_id} className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[11px] font-bold uppercase tracking-wide">
-                      {c.conference.name}
-                    </span>
-                  ))}
+                  {paper.arxivId && <span className="text-[13px] font-bold tracking-wider text-[#8B8B8B] uppercase">arXiv:{paper.arxivId}</span>}
                 </div>
 
-                {/* Title */}
-                <h1 className="text-[26px] font-black leading-[1.1] tracking-[-0.03em] text-[#171717] md:text-[34px] lg:text-[38px]">
+                <h1 className="text-[24px] font-black leading-[1.1] tracking-[-0.03em] text-[#111111] md:text-[32px] lg:text-[36px]">
                   {paper.title}
                 </h1>
 
-                {/* Authors */}
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                  {paper.authors.slice(0, 8).map((pa, i) => (
-                    <span key={pa.author.id} className="inline-flex items-center">
-                      {i > 0 && <span className="mr-2 text-[#DCDCD7]">·</span>}
-                      <Link href={`/authors/${pa.author.slug}`} className="text-[14px] font-semibold text-[#444444] no-underline hover:text-[#FF5A1F] hover:underline decoration-2 underline-offset-4 transition-colors">
-                        {pa.author.name}
-                      </Link>
-                    </span>
-                  ))}
-                  {paper.authors.length > 8 && (
-                    <span className="ml-1 text-[13px] font-bold text-[#FF5A1F]">+{paper.authors.length - 8} more</span>
-                  )}
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] leading-relaxed text-[#555555]">
+                    {paper.authors.slice(0, 8).map((pa, i) => (
+                      <span key={pa.author.id} className="inline-flex items-center">
+                        {i > 0 && <span className="mr-2 text-[#DCDCD7]">·</span>}
+                        <Link href={`/authors/${pa.author.slug}`} className="font-semibold text-[#444444] hover:text-[#FF5A1F] hover:underline decoration-2 underline-offset-4">
+                          {pa.author.name}
+                        </Link>
+                      </span>
+                    ))}
+                    {paper.authors.length > 8 && (
+                      <span className="ml-2 font-bold text-[#FF5A1F]">+{paper.authors.length - 8} more</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#E5E5E0] pt-5">
+                    {paper.publicationDate && (
+                      <InfoTile icon={<Calendar size={16} />} label="submitted" value={formatDate(paper.publicationDate)} />
+                    )}
+                    {paper.citationCount > 0 && (
+                      <InfoTile icon={<Quote size={16} />} label="citations" value={paper.citationCount} />
+                    )}
+                    {paper.conferences.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {paper.conferences.map((c) => (
+                          <span
+                            key={c.conference_id}
+                            className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[11px] font-bold uppercase tracking-wide"
+                          >
+                            {c.conference.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Stats Bar */}
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1">
-                  {paper.citationCount > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <MessageSquare size={13} className="text-[#999999]" strokeWidth={1.8} />
-                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.citationCount)}</span>
-                      <span className="text-[9.5px] font-medium text-[#999999]">citations</span>
-                    </div>
-                  )}
-                  {paper.githubStars != null && paper.githubStars > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <Star size={13} fill="#FF5A1F" stroke="#FF5A1F" strokeWidth={1} />
-                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.githubStars)}</span>
-                      <span className="text-[9.5px] font-medium text-[#999999]">stars</span>
-                    </div>
-                  )}
-                  {paper.githubForks != null && paper.githubForks > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <GitBranch size={13} className="text-[#FF5A1F]" strokeWidth={1.8} />
-                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.githubForks)}</span>
-                      <span className="text-[9.5px] font-medium text-[#999999]">forks</span>
-                    </div>
-                  )}
-                  {paper.hfUpvotes != null && paper.hfUpvotes > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <Heart size={13} className="text-[#999999]" strokeWidth={1.8} />
-                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.hfUpvotes)}</span>
-                      <span className="text-[9.5px] font-medium text-[#999999]">HF upvotes</span>
-                    </div>
-                  )}
-                  {paper.referenceCount > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <BookOpen size={13} className="text-[#999999]" strokeWidth={1.8} />
-                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.referenceCount)}</span>
-                      <span className="text-[9.5px] font-medium text-[#999999]">references</span>
-                    </div>
-                  )}
-                  {paper.publicationDate && (
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={13} className="text-[#999999]" strokeWidth={1.8} />
-                      <span className="text-[13.5px] font-bold text-[#171717]">{formatDate(paper.publicationDate)}</span>
-                      <span className="text-[9.5px] font-medium text-[#999999]">published</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <a
-                    href={paper.pdfUrl || arxivUrl || "#"}
+                <div className="flex flex-wrap items-center gap-3 pt-4">
+                  <a 
+                    href={paper.pdfUrl || arxivUrl || "#"} 
+                    className="ds-button h-11 px-6 gap-2 text-[14px]"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ds-button inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5A1F] px-6 py-2.5 text-[14px] font-semibold text-white no-underline transition-all hover:bg-[#FF6C37] active:scale-[0.97]"
+                    aria-label="View PDF"
                   >
                     <FileText size={18} />
                     View PDF
                   </a>
                   {arxivUrl && (
-                    <a
+                    <a 
                       href={arxivUrl}
+                      className="ds-button-ghost h-11 px-6 gap-2 text-[14px] border-2"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ds-button-ghost inline-flex items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent px-5 py-2 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
+                      aria-label="Open arXiv page"
                     >
                       <Globe size={18} />
-                      arXiv
+                      arXiv page
                     </a>
                   )}
                   {paper.githubUrl && (
@@ -876,37 +1006,38 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
                       href={paper.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ds-button-ghost inline-flex items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent px-5 py-2 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
+                      className="ds-button-ghost h-11 px-6 gap-2 text-[14px] border-2"
+                      aria-label="Open code repository"
                     >
-                      <Github size={18} />
+                      <Github size={18} className="text-[#111111]" />
                       Code
-                      {paper.githubStars != null && paper.githubStars > 0 && (
-                        <span className="text-[#8B8B8B] font-bold">{formatCompactNumber(paper.githubStars)}</span>
-                      )}
+                      {paper.githubStars ? (
+                        <span className="ml-1 text-[#8B8B8B] font-bold">
+                          {formatCompactNumber(paper.githubStars)}
+                        </span>
+                      ) : null}
                     </a>
                   )}
-                  <div className="flex items-center gap-2">
-                    <button
+                  <div className="flex items-center gap-2 ml-auto lg:ml-0">
+                    <button 
                       type="button"
                       onClick={() => handleCopyCitation("apa")}
-                      className="ds-button-ghost !p-0 w-11 h-11 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent inline-flex items-center justify-center transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
+                      className="ds-button-ghost h-11 w-11 p-0 border-2" 
                       title="Cite"
+                      aria-label="Copy citation"
                     >
                       <Quote size={18} />
                     </button>
                     <button
                       type="button"
                       onClick={handleShare}
-                      className="ds-button-ghost !p-0 w-11 h-11 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent inline-flex items-center justify-center transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
+                      className="ds-button-ghost h-11 w-11 p-0 border-2"
                       title="Share"
+                      aria-label="Share this paper"
                     >
                       <Share2 size={18} />
                     </button>
-                    <button
-                      type="button"
-                      className="ds-button-ghost !p-0 w-11 h-11 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent inline-flex items-center justify-center transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
-                      title="Save"
-                    >
+                    <button type="button" className="ds-button-ghost h-11 w-11 p-0 border-2" title="Save" aria-label="Save paper">
                       <Star size={18} />
                     </button>
                   </div>
@@ -914,259 +1045,205 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
 
                 {/* Benchmark Highlights */}
                 {paper.rankings && paper.rankings.length > 0 && (
-                  <div className="flex flex-col gap-2 pt-3 border-l-[3px] border-[rgba(255,90,31,0.15)] pl-4">
+                  <div className="flex flex-col gap-3 pt-4 border-l-4 border-[#FF5A1F]/20 pl-6">
                     {paper.rankings.slice(0, 3).map((ranking) => (
-                      <div key={ranking.id} className="flex items-center gap-2 text-[13.5px] font-semibold text-[#171717]">
-                        <span className="text-[#FF5A1F]">#{ranking.rank}</span>
-                        <span className="text-[#8B8B8B] font-medium">on</span>
-                        <span className="hover:text-[#FF5A1F] transition-colors cursor-pointer border-b border-transparent hover:border-[rgba(255,90,31,0.3)]">{ranking.benchmark.name}</span>
-                      </div>
+                      <RankingHighlight key={ranking.id} rank={ranking.rank} benchmarkName={ranking.benchmark.name} />
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Preview (desktop) */}
-              <div className="hidden lg:block w-[200px] lg:w-[220px] shrink-0">
-                <a
-                  href={previewHref || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`block overflow-hidden rounded-[18px] transition-all duration-300 group ${!previewHref ? 'pointer-events-none' : ''}`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <div
-                    className="relative"
-                    style={{ aspectRatio: '3/4', background: '#EFECE6', transition: 'transform 0.4s ease' }}
-                  >
-                    {paper.thumbnailUrl ? (
-                      <Image
-                        src={paper.thumbnailUrl}
-                        alt={`Preview of ${paper.title}`}
-                        width={220}
-                        height={293}
-                        unoptimized
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-400"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          target.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="preview-page flex flex-col h-full p-5 pb-3.5">
-                        <div className="h-[3px] rounded mb-3 bg-black/5 w-2/5" />
-                        <div className="h-[6px] rounded mb-1.5 bg-black/7 w-[85%]" />
-                        <div className="h-[6px] rounded mb-1.5 bg-black/7 w-[60%]" />
-                        <div className="mt-2.5 space-y-1.5">
-                          <div className="h-1 rounded bg-black/5 w-[92%]" />
-                          <div className="h-1 rounded bg-black/5 w-[78%]" />
-                          <div className="h-1 rounded bg-black/5 w-[92%]" />
-                          <div className="h-1 rounded bg-black/5 w-[60%]" />
-                        </div>
-                        <div className="mt-auto pt-2.5 flex items-center gap-1.5">
-                          <div className="w-3.5 h-3.5 rounded-full bg-black/5" />
-                          <div className="h-1 w-[60px] rounded bg-black/5" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </a>
+              <div className="hidden lg:block">
+                <HeroPreview paper={paper} previewHref={previewHref} />
               </div>
             </div>
 
-            {/* AI Summary (TL;DR) */}
+            {/* AI Summary Section */}
             {paper.tlDr && (
-              <div style={{ borderLeft: '3px solid rgba(255,90,31,0.15)', paddingLeft: '20px' }}>
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-[7px] bg-[#FF5A1F] text-white">
-                    <Sparkles size={13} fill="currentColor" stroke="none" />
+              <div className="ds-card-hero p-8 md:p-10 border-2 border-[#FF5A1F]/10 bg-white/80 backdrop-blur-sm">
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF5A1F] text-white shadow-lg shadow-[#FF5A1F]/30">
+                      <Sparkles size={15} fill="currentColor" />
+                    </div>
+                    <span className="text-[15px] font-black uppercase tracking-widest text-[#111111]">TL;DR</span>
                   </div>
-                  <span className="text-[12px] font-black uppercase tracking-[0.15em] text-[#171717]">TL;DR</span>
-                  <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#F0EFE9] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#8B8B8B]" />
-                    AI
-                  </span>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E0] bg-[#F8F7F2] px-3 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#8B8B8B]" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8B8B8B]">AI-GENERATED</span>
+                  </div>
                 </div>
-                <p className="text-[15px] font-medium leading-[1.8] text-[#333333] m-0">
+                <p className="text-[17px] font-medium leading-[1.8] text-[#222222]">
                   {paper.tlDr}
                 </p>
               </div>
             )}
 
-            {/* ===== MAIN CONTENT SECTIONS ===== */}
-            <div className="flex flex-col gap-8">
-
-              {/* ABSTRACT */}
+            <div className="space-y-16 pt-6">
               {paper.abstract && (
-                <div className="flex flex-col gap-3">
-                  <h2 className="section-label-muted">ABSTRACT</h2>
+                <div className="space-y-5">
+                  <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex items-center gap-4">
+                    ABSTRACT
+                    <div className="h-px flex-1 bg-[#E5E5E0]" />
+                  </h2>
                   <div className="relative">
-                    <p
-                      className={`text-[14.5px] leading-[1.8] text-[#484848] font-[450] m-0 ${
-                        abstractExpanded ? "" : "max-h-[130px] overflow-hidden"
-                      }`}
-                      style={{ transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                    >
+                    <p className={`text-[16px] leading-[1.9] text-[#444444] font-medium transition-all ${abstractExpanded ? "" : "line-clamp-[8]"}`}>
                       {paper.abstract}
                     </p>
                     {!abstractExpanded && (
-                      <div style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: '48px',
-                        background: 'linear-gradient(to top, #F8F7F2, transparent)',
-                        pointerEvents: 'none',
-                        transition: 'opacity 0.3s ease',
-                      }} />
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#F8F7F2] via-[#F8F7F2]/70 to-transparent" />
                     )}
                   </div>
                   <button
                     onClick={() => setAbstractExpanded((v) => !v)}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#FF5A1F] hover:text-[#FF6C37] transition-colors focus-visible:outline-none bg-transparent border-none cursor-pointer p-0 w-fit"
+                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#FF5A1F] hover:text-[#FF6C37] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]/40 rounded"
                     aria-expanded={abstractExpanded}
+                    aria-label={abstractExpanded ? "Collapse abstract" : "Expand full abstract"}
                   >
-                    <span id="abstract-btn-text">{abstractExpanded ? "Show less" : "Read full abstract"}</span>
-                    <ChevronDown size={15} className={`transition-transform ${abstractExpanded ? "rotate-180" : ""}`} />
+                    {abstractExpanded ? (
+                      <>
+                        <ChevronUp size={15} />
+                        Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown size={15} />
+                        Read full abstract
+                      </>
+                    )}
                   </button>
                 </div>
               )}
 
-              {/* RESEARCH TAXONOMY */}
-              <h2 className="section-label">RESEARCH TAXONOMY</h2>
-
-              {/* TASKS */}
-              <section className="flex flex-col gap-3">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">TASKS</h3>
-                {paper.tasks.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
+              {paper.tasks.length > 0 && (
+                <div className="space-y-6">
+                  <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex items-center gap-4">
+                    TASKS
+                    <div className="h-px flex-1 bg-[#E5E5E0]" />
+                  </h2>
+                  <div className="flex flex-wrap gap-3">
                     {paper.tasks.map((t) => (
-                      <Link
-                        key={t.task.id}
+                      <Link 
+                        key={t.task.id} 
                         href={`/tasks/${t.task.slug}`}
-                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#D4EDDA] bg-[#F1F9F2] px-2 py-0.5 text-[11.5px] font-medium text-[#2D6A4F] no-underline hover:opacity-80 transition-opacity"
+                        className="ds-chip h-10 px-5 text-[14px] font-bold hover:bg-[#FF5A1F]/20 transition-all border-[#FF5A1F]/20"
                       >
-                        <span className="w-1 h-1 rounded-full bg-[#2D6A4F] opacity-50" />
                         {t.task.name}
                       </Link>
                     ))}
                   </div>
-                ) : (
-                  <span className="text-[11px] text-[#999] italic">Not available</span>
-                )}
-              </section>
+                </div>
+              )}
 
-              {/* METHODS */}
-              <section className="flex flex-col gap-3">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">METHODS</h3>
-                {paper.methods.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
+              {paper.methods.length > 0 && (
+                <div className="space-y-6">
+                  <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex items-center gap-4">
+                    METHODS
+                    <div className="h-px flex-1 bg-[#E5E5E0]" />
+                  </h2>
+                  <div className="flex flex-wrap gap-3">
                     {paper.methods.map((m) => (
-                      <Link
-                        key={m.method.id}
+                      <Link 
+                        key={m.method.id} 
                         href={`/methods/${m.method.slug}`}
-                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#E2D5F0] bg-[#F5F0FA] px-2 py-0.5 text-[11.5px] font-medium text-[#5B3A8C] no-underline hover:opacity-80 transition-opacity"
+                        className="inline-flex h-10 items-center rounded-full border-2 border-[#E5E5E0] bg-white px-5 text-[14px] font-bold text-[#111111] transition-all hover:border-[#FF5A1F] hover:text-[#FF5A1F]"
                       >
-                        <span className="w-1 h-1 rounded-full bg-[#5B3A8C] opacity-50" />
                         {m.method.name}
                       </Link>
                     ))}
                   </div>
-                ) : (
-                  <span className="text-[11px] text-[#999] italic">Not available</span>
-                )}
-              </section>
+                </div>
+              )}
 
-              {/* MODELS */}
-              <section className="flex flex-col gap-3">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">MODELS</h3>
-                {paper.models.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {paper.models.map((m) => (
-                      <Link
-                        key={m.model.id}
-                        href={`/models/${m.model.slug}`}
-                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#FDE4C8] bg-[#FFF8F0] px-2 py-0.5 text-[11.5px] font-medium text-[#A45C00] no-underline hover:opacity-80 transition-opacity"
-                      >
-                        <span className="w-1 h-1 rounded-full bg-[#A45C00] opacity-50" />
-                        {m.model.name}
-                      </Link>
+              {/* Preservation of existing Phase 2+ sections (Rankings, Results, etc.) */}
+              {paper.models.length > 0 && (
+                <Section title="Models">
+                  <div className="flex flex-wrap gap-2">
+                    {paper.models.map((item) => (
+                      <TaxonomyLink
+                        key={item.model.id}
+                        href={`/models/${item.model.slug}`}
+                        label={item.model.name}
+                        variant="models"
+                      />
                     ))}
                   </div>
-                ) : (
-                  <span className="text-[11px] text-[#999] italic">Not available</span>
-                )}
-              </section>
+                </Section>
+              )}
 
-              {/* DATASETS */}
-              <section className="flex flex-col gap-3">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">DATASETS</h3>
-                {paper.datasets.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {paper.datasets.map((d) => (
-                      <Link
-                        key={d.dataset.id}
-                        href={`/datasets/${d.dataset.slug}`}
-                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#D0E6F2] bg-[#EDF5FA] px-2 py-0.5 text-[11.5px] font-medium text-[#2C617D] no-underline hover:opacity-80 transition-opacity"
-                      >
-                        <span className="w-1 h-1 rounded-full bg-[#2C617D] opacity-50" />
-                        {d.dataset.name}
-                      </Link>
+              {paper.datasets.length > 0 && (
+                <Section title="Datasets">
+                  <div className="flex flex-wrap gap-2">
+                    {paper.datasets.map((item) => (
+                      <TaxonomyLink
+                        key={item.dataset.id}
+                        href={`/datasets/${item.dataset.slug}`}
+                        label={item.dataset.name}
+                        variant="datasets"
+                      />
                     ))}
                   </div>
-                ) : (
-                  <span className="text-[11px] text-[#999] italic">Not available</span>
-                )}
-              </section>
+                </Section>
+              )}
 
-              {/* Benchmarks */}
-              <BenchmarksSection
-                rankings={paper.rankings}
-                models={paper.models}
-                sotaClaims={paper.sotaClaims}
-              />
+              {(paper.rankings.length > 0 || paper.sotaClaims.length > 0) && (
+                <BenchmarksSection
+                  rankings={paper.rankings}
+                  models={paper.models}
+                  sotaClaims={paper.sotaClaims}
+                />
+              )}
 
-              {/* RELATED PAPERS */}
-              <section className="border-t border-[#ECE7DD] pt-6">
-                <h2 className="section-label mb-3.5">RELATED PAPERS</h2>
-                {relatedLoading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="flex rounded-lg overflow-hidden animate-pulse">
-                        <div className="w-[160px] h-[88px] bg-[#EFECE6] shrink-0" />
-                        <div className="flex-1 p-2.5 space-y-1.5 bg-white">
-                          <div className="h-3 bg-gray-100 rounded w-full" />
-                          <div className="h-3 bg-gray-100 rounded w-3/4" />
-                          <div className="h-2.5 bg-gray-100 rounded w-1/2" />
+              {(relatedLoading || relatedPapers.length > 0) && (
+                <Section
+                  title="Related Papers"
+                  meta={
+                    !relatedLoading ? (
+                      <span>{relatedPapers.length} paper{relatedPapers.length !== 1 ? "s" : ""}</span>
+                    ) : undefined
+                  }
+                >
+                  {relatedLoading ? (
+                    /* Skeleton loading state */
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex flex-col overflow-hidden rounded-xl border border-[#E5E5E0] bg-white animate-pulse"
+                        >
+                          <div className="h-[80px] bg-[#F3F0EB]" />
+                          <div className="p-3.5 space-y-2">
+                            <div className="h-3.5 bg-[#EEEBE6] rounded w-full" />
+                            <div className="h-3.5 bg-[#EEEBE6] rounded w-5/6" />
+                            <div className="h-3 bg-[#F3F0EB] rounded w-1/2 mt-1" />
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : relatedPapers.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
-                    {relatedPapers.map((relatedPaper) => (
-                      <RelatedPaperCard key={relatedPaper.slug || relatedPaper.id} paper={relatedPaper} />
-                    ))}
-                  </div>
-                ) : !relatedLoading ? (
-                  <span className="text-[11px] text-[#999] italic">Not available</span>
-                ) : null}
-              </section>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {relatedPapers.map((relatedPaper) => (
+                        <RelatedPaperCard key={relatedPaper.slug || relatedPaper.id} paper={relatedPaper} />
+                      ))}
+                    </div>
+                  )}
+                </Section>
+              )}
             </div>
 
-            {/* Back link */}
-            <a
-              href="/"
-              className="hover-dim inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#8B8B8B] no-underline border-t border-[#E5E5E0] pt-3.5 transition-colors hover:text-[#FF5A1F]"
-            >
-              <ArrowLeft size={13} />
-              Back to papers
-            </a>
+            <div className="no-print mt-5 border-t border-[#E5E5E0] pt-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-[13px] font-medium text-[#555555] no-underline hover:text-[#FF5A1F] transition-colors"
+                aria-label="Back to papers list"
+              >
+                <ArrowLeft size={14} />
+                Back to papers
+              </Link>
+            </div>
           </main>
 
-          {/* ===== SIDEBAR ===== */}
-          <aside className="space-y-5 xl:sticky xl:top-6 self-start">
+          <aside className="no-print space-y-4 xl:self-start xl:sticky xl:top-6" aria-label="Paper details sidebar">
             <RepositoryPanel paper={paper} />
             <CitationPanel
               paper={paper}
