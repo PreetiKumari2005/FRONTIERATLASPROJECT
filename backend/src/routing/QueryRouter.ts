@@ -1,5 +1,6 @@
 import { PrismaClient } from "../generated/prisma/client.js";
 import { DatabaseManager } from "../database/DatabaseManager.js";
+import { QueryIntent } from "./types.js";
 
 const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
   const timeout = new Promise<never>((_, reject) =>

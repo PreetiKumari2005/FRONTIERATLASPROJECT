@@ -7,6 +7,7 @@ import SearchBar from "@/components/SearchBar";
 import { usePathname } from "next/navigation";
 import { useScrollThreshold } from "@/lib/useScroll";
 import Sidebar from "@/components/Sidebar";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 export default function Navbar({
@@ -19,6 +20,10 @@ export default function Navbar({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isScrolled = useScrollThreshold(50);
   const pathname = usePathname();
+  const isMethodsActive = pathname.startsWith("/methods");
+  const isTasksActive = pathname.startsWith("/tasks");
+  const isBenchmarksActive = pathname.startsWith("/benchmarks");
+  const isModelsActive = pathname.startsWith("/models");
 
   const isHomePage = pathname === "/";
   const isCategoryPage = pathname.startsWith("/category/");
@@ -75,20 +80,76 @@ export default function Navbar({
               <line x1="4" y1="18" x2="20" y2="18" />
             </svg>
           </button>
-          <Link href="/" onClick={(e) => { e.preventDefault(); window.location.href = '/'; }} className="flex items-center cursor-pointer relative w-[200px] xl:w-[240px] h-12 xl:h-14">
+          <Link href="/" className="flex items-center cursor-pointer relative w-[200px] xl:w-[240px] h-12 xl:h-14">
             <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-left" sizes="(max-width: 1280px) 200px, 240px" />
           </Link>
 
         </div>
 
         {/* Center — Search Bar (Desktop) */}
-        <div className="hidden lg:flex flex-1 items-center justify-center max-w-[240px] xl:max-w-[400px]">
-          {shouldShowSearch && (
-            <SearchBar variant="compact" placeholder="Search..." initialQuery="" layoutIdPrefix="global" />
-          )}
+        <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center justify-center w-[240px] xl:w-[400px]">
+          <AnimatePresence>
+            {shouldShowSearch && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="w-full"
+              >
+                <SearchBar variant="compact" placeholder="Search..." initialQuery="" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-
+        {/* Center — Nav Links (Desktop) */}
+        <div className="hidden lg:flex items-center gap-6 ml-auto">
+          <Link
+            href="/tasks"
+            data-text="Tasks"
+            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
+              isTasksActive
+                ? "text-[#F55036] font-bold"
+                : "text-[#555555] font-medium hover:text-[#F55036]"
+            }`}
+          >
+            Tasks
+          </Link>
+          <Link
+            href="/methods"
+            data-text="Methods"
+            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
+              isMethodsActive
+                ? "text-[#F55036] font-bold"
+                : "text-[#555555] font-medium hover:text-[#F55036]"
+            }`}
+          >
+            Methods
+          </Link>
+          <Link
+            href="/benchmarks"
+            data-text="Benchmarks"
+            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
+              isBenchmarksActive
+                ? "text-[#F55036] font-bold"
+                : "text-[#555555] font-medium hover:text-[#F55036]"
+            }`}
+          >
+            Benchmarks
+          </Link>
+          <Link
+            href="/models"
+            data-text="Models"
+            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
+              isModelsActive
+                ? "text-[#F55036] font-bold"
+                : "text-[#555555] font-medium hover:text-[#F55036]"
+            }`}
+          >
+            Models
+          </Link>
+        </div>
 
         {/* Right (Desktop) */}
         <div className="hidden xl:flex items-center gap-4 border-l border-[#E5E5E0] pl-4 shrink-0">
@@ -126,7 +187,7 @@ export default function Navbar({
       >
         {/* Drawer Header */}
         <div className="h-[52px] border-b border-[#E5E5E0] flex items-center justify-between px-4 shrink-0">
-          <Link href="/" onClick={(e) => { e.preventDefault(); window.location.href = '/'; closeMenu(); }} className="relative block w-[170px] h-10 cursor-pointer">
+          <Link href="/" onClick={closeMenu} className="relative block w-[170px] h-10 cursor-pointer">
             <Image
               src="/logo.png"
               alt="Frontier Atlas"
@@ -155,13 +216,8 @@ export default function Navbar({
           </button>
         </div>
 
-        {/* Mobile Search */}
-        <div className="p-4 border-b border-[#E5E5E0] shrink-0 xl:hidden">
-          <SearchBar variant="compact" placeholder="Search..." initialQuery="" layoutIdPrefix="mobile-drawer" />
-        </div>
-
         {/* Drawer Content */}
-        <div className="flex-1 overflow-y-auto py-2 overscroll-contain">
+        <div className="flex-1 overflow-y-auto py-2">
           <Sidebar initialActive={activeSort} onItemSelect={onItemSelect} onItemClick={closeMenu} />
         </div>
       </div>
