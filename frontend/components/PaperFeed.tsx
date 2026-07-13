@@ -277,6 +277,7 @@ const PaperThumbnail = memo(
             src={thumbnail}
             alt={title || "Paper thumbnail"}
             fill
+            unoptimized
             className="object-contain"
             sizes="(max-width: 1280px) 100vw, 220px"
             onError={() => setHasError(true)}

@@ -19,6 +19,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "arxiv.org",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
   experimental: {
