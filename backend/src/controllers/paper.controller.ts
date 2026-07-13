@@ -165,7 +165,7 @@ export const getPaperBySlug = async (c: Context) => {
     const response = { status: "success", data: paper };
 
     try {
-      await redis.set(cacheKey, response, { ex: 300 });
+      await redis.set(cacheKey, response, { ex: 1800 });
     } catch (err) {
       console.error("Redis SET failed:", err);
     }

@@ -354,7 +354,8 @@ export const getPaperBySlug = async (
 ) => {
   const paper = await queryRouter.routeQuery(
     async (prisma: PrismaClient) => {
-      return prisma.paper.findUnique({
+      // Phase 1: fetch scalar fields only — fast index lookup, no JOIN explosion
+      const paperData = await prisma.paper.findUnique({
         where: { slug },
         select: {
           id: true,
@@ -388,86 +389,65 @@ export const getPaperBySlug = async (
           hfUpvotes: true,
           trendingScore: true,
           discoverySource: true,
-          authors: {
+        },
+      });
+
+      if (!paperData) return null;
+
+      // Phase 2: fetch all relations in parallel using the known paper_id
+      // Each is a simple index lookup — no JOIN cross-product
+      const [authors, models, datasets, tasks, methods, conferences, rankings, sotaClaims] =
+        await Promise.all([
+          prisma.paperAuthor.findMany({
+            where: { paper_id: paperData.id },
             select: {
               paper_id: true,
               author_id: true,
-              author: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              author: { select: { id: true, name: true, slug: true } },
             },
-          },
-          models: {
+          }),
+          prisma.paperModel.findMany({
+            where: { paper_id: paperData.id },
             select: {
               paper_id: true,
               model_id: true,
-              model: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              model: { select: { id: true, name: true, slug: true } },
             },
-          },
-          datasets: {
+          }),
+          prisma.paperDataset.findMany({
+            where: { paper_id: paperData.id },
             select: {
               paper_id: true,
               dataset_id: true,
-              dataset: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              dataset: { select: { id: true, name: true, slug: true } },
             },
-          },
-          tasks: {
+          }),
+          prisma.paperTask.findMany({
+            where: { paper_id: paperData.id },
             select: {
               paper_id: true,
               task_id: true,
-              task: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  color: true,
-                },
-              },
+              task: { select: { id: true, name: true, slug: true, color: true } },
             },
-          },
-          methods: {
+          }),
+          prisma.paperMethod.findMany({
+            where: { paper_id: paperData.id },
             select: {
               paper_id: true,
               method_id: true,
-              method: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              method: { select: { id: true, name: true, slug: true } },
             },
-          },
-          conferences: {
+          }),
+          prisma.paperConference.findMany({
+            where: { paper_id: paperData.id },
             select: {
               paper_id: true,
               conference_id: true,
-              conference: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              conference: { select: { id: true, name: true, slug: true } },
             },
-          },
-          rankings: {
+          }),
+          prisma.ranking.findMany({
+            where: { paper_id: paperData.id },
             select: {
               id: true,
               paper_id: true,
@@ -475,31 +455,31 @@ export const getPaperBySlug = async (
               rank: true,
               previous_rank: true,
               updated_at: true,
-              benchmark: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              benchmark: { select: { id: true, name: true, slug: true } },
             },
-          },
-          sotaClaims: {
+          }),
+          prisma.sotaClaim.findMany({
+            where: { paper_id: paperData.id },
             select: {
               id: true,
               paper_id: true,
               benchmark_id: true,
-              benchmark: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                },
-              },
+              benchmark: { select: { id: true, name: true, slug: true } },
             },
-          },
-        },
-      });
+          }),
+        ]);
+
+      return {
+        ...paperData,
+        authors,
+        models,
+        datasets,
+        tasks,
+        methods,
+        conferences,
+        rankings,
+        sotaClaims,
+      };
     },
   );
 

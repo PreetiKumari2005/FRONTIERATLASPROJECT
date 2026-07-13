@@ -17,6 +17,7 @@ import {
   type GetPapersResult,
   type Paper,
 } from "@/lib/paperApi";
+import { prefetchPaperBySlug } from "@/lib/papers";
 import Image from "next/image";
 
 // --- Performance Logger ---
@@ -526,6 +527,34 @@ export default function PaperList({
     initialPapers?.hasMore ? initialPapers.page + 1 : 0,
   );
 
+  // Paper detail prefetching via IntersectionObserver
+  const prefetchedRef = useRef(new Set<string>());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const slug = (entry.target as HTMLElement).getAttribute("data-paper-slug");
+            if (slug && !prefetchedRef.current.has(slug)) {
+              prefetchedRef.current.add(slug);
+              prefetchPaperBySlug(slug);
+            }
+          }
+        }
+      },
+      { rootMargin: "100px" }
+    );
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  const observeCard = useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      observerRef.current?.observe(el);
+    }
+  }, []);
+
   const matchesSearch = useCallback(
     (paper: Paper) => {
       if (!normalizedSearchQuery) return true;
@@ -751,7 +780,9 @@ export default function PaperList({
         data-page={page}
       >
         {papers.map((paper) => (
-          <PaperCard key={paper.slug} paper={paper} />
+          <div key={paper.slug} ref={observeCard} data-paper-slug={paper.slug}>
+            <PaperCard paper={paper} />
+          </div>
         ))}
 
         {/* Initial load: show skeleton cards instead of spinner */}

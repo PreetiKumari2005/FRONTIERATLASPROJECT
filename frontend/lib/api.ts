@@ -1,4 +1,3 @@
-const isDev = process.env.NODE_ENV === "development";
 const defaultApiUrl = "https://frontieratlas-backend.morningsignal-india.workers.dev";
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || defaultApiUrl).replace(/\/$/, "");
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

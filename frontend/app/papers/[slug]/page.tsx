@@ -1,91 +1,13 @@
 "use client";
-import { ArrowLeft, AlertCircle, BookOpen } from "lucide-react";
+import { AlertCircle, BookOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getPaperBySlug } from "@/lib/papers";
 import type { PaperDetail as PaperDetailType } from "@/lib/papers";
 import PaperDetail from "@/components/PaperDetail";
+import PaperDetailSkeleton from "@/components/PaperDetailSkeleton";
 import Navbar from "@/components/Navbar";
-
-function Skeleton() {
-  return (
-    <div className="w-full max-w-7xl mx-auto px-5 lg:px-6 py-6 lg:py-8 animate-pulse">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="h-3 bg-gray-200 rounded w-10" />
-        <span className="text-gray-300">›</span>
-        <div className="h-3 bg-gray-200 rounded w-48" />
-      </div>
-
-      {/* Hero skeleton: content + inline preview */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-8 mb-8 items-start">
-        <div>
-          <div className="h-12 bg-gray-200 rounded w-40 mb-4" />
-          <div className="h-10 bg-gray-200 rounded w-[88%] mb-3" />
-          <div className="h-10 bg-gray-200 rounded w-[72%] mb-6" />
-          <div className="h-4 bg-gray-200 rounded w-64 mb-4" />
-          <div className="flex gap-3 mb-6">
-            <div className="h-4 bg-gray-200 rounded w-20" />
-            <div className="h-4 bg-gray-200 rounded w-24" />
-            <div className="h-4 bg-gray-200 rounded w-28" />
-          </div>
-          <div className="flex flex-wrap gap-2 mb-6">
-            <div className="h-10 bg-gray-200 rounded-full w-20" />
-            <div className="h-10 bg-gray-200 rounded-full w-24" />
-            <div className="h-10 bg-gray-200 rounded-full w-20" />
-            <div className="h-10 bg-gray-200 rounded-full w-24" />
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-6 border-t border-gray-100">
-            <div className="h-20 bg-gray-100 rounded-xl" />
-            <div className="h-20 bg-gray-100 rounded-xl" />
-            <div className="h-20 bg-gray-100 rounded-xl" />
-            <div className="h-20 bg-gray-100 rounded-xl" />
-            <div className="h-20 bg-gray-100 rounded-xl" />
-          </div>
-        </div>
-        <div className="hidden lg:block">
-          <div className="h-3 bg-gray-200 rounded w-24 mb-3" />
-          <div className="aspect-[3/4] bg-gray-100 rounded-2xl border border-gray-200" />
-        </div>
-      </div>
-
-      {/* Main content skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 lg:gap-8">
-        <div className="space-y-4">
-          <div>
-            <div className="h-4 bg-gray-200 rounded w-32 mb-3" />
-            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-              <div className="h-3 bg-gray-100 rounded w-full" />
-              <div className="h-3 bg-gray-100 rounded w-3/4" />
-            </div>
-          </div>
-          <div>
-            <div className="h-4 bg-gray-200 rounded w-24 mb-3" />
-            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-              <div className="h-3 bg-gray-100 rounded w-full" />
-              <div className="h-3 bg-gray-100 rounded w-full" />
-              <div className="h-3 bg-gray-100 rounded w-full" />
-              <div className="h-3 bg-gray-100 rounded w-5/6" />
-            </div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-            <div className="h-3 bg-gray-200 rounded w-16" />
-            <div className="h-4 bg-gray-100 rounded w-full" />
-            <div className="h-4 bg-gray-100 rounded w-2/3" />
-          </div>
-          <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-            <div className="h-3 bg-gray-200 rounded w-14" />
-            <div className="h-4 bg-gray-100 rounded w-3/4" />
-            <div className="h-4 bg-gray-100 rounded w-1/2" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function PaperPage() {
   const params = useParams();
@@ -122,7 +44,7 @@ export default function PaperPage() {
   let content = null;
 
   if (loading) {
-    content = <Skeleton />;
+    content = <PaperDetailSkeleton />;
   } else if (notFound) {
     content = (
       <div className="w-full max-w-7xl mx-auto px-5 lg:px-6 py-6 lg:py-8">
