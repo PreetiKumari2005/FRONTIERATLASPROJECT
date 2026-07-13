@@ -137,9 +137,39 @@ interface PaperDetailResponse {
   data: PaperDetail;
 }
 
+const paperCache = new Map<string, { data: PaperDetail; ts: number }>();
+const PAPER_CACHE_TTL = 300_000;
+const inflightFetches = new Map<string, Promise<PaperDetail>>();
+
 export async function getPaperBySlug(slug: string): Promise<PaperDetail> {
-  const response = await fetchApi<PaperDetailResponse>(
+  const cached = paperCache.get(slug);
+  if (cached && Date.now() - cached.ts < PAPER_CACHE_TTL) {
+    return cached.data;
+  }
+
+  const inflight = inflightFetches.get(slug);
+  if (inflight) {
+    try {
+      return await inflight;
+    } catch {
+      // Inflight promise rejected (e.g. prefetch failure) — fall through
+      // to make a fresh request instead of propagating the error.
+    }
+  }
+
+  const promise = fetchApi<PaperDetailResponse>(
     `/api/v1/research-papers/${encodeURIComponent(slug)}`
-  );
-  return response.data;
+  ).then((response) => {
+    paperCache.set(slug, { data: response.data, ts: Date.now() });
+    return response.data;
+  }).finally(() => {
+    inflightFetches.delete(slug);
+  });
+
+  inflightFetches.set(slug, promise);
+  return promise;
+}
+
+export function prefetchPaperBySlug(slug: string): void {
+  getPaperBySlug(slug).catch(() => {});
 }

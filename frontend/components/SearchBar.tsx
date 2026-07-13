@@ -39,8 +39,13 @@ export default function SearchBar({
 
     setLoading(true);
     try {
-      const results = await searchSuggestions(q, 5);
-      setSuggestions(results);
+      // Fetch a larger pool of results to ensure we capture the research fields
+      const results = await searchSuggestions(q, 20);
+      // Filter the dropdown to ONLY show research fields (tasks and methods)
+      const fieldSuggestions = results.filter(
+        (r) => r.type === "tasks" || r.type === "methods"
+      );
+      setSuggestions(fieldSuggestions.slice(0, 5));
     } catch (error) {
       console.error("Failed to fetch suggestions:", error);
       setSuggestions([]);
@@ -165,7 +170,7 @@ export default function SearchBar({
     >
       <motion.form
         layoutId={layoutIdPrefix ? `${layoutIdPrefix}-container` : undefined}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        transition={{ type: "spring", stiffness: 250, damping: 25 }}
         onSubmit={handleSubmit}
         className={`relative flex items-center px-3 md:px-4 bg-white border border-[#E5E5E0] focus-within:border-[#DCDCD7] focus-within:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all ${
           variant === "compact" ? "rounded-[20px]" : "rounded-[24px]"
@@ -173,14 +178,14 @@ export default function SearchBar({
       >
         <motion.div
           layoutId={layoutIdPrefix ? `${layoutIdPrefix}-icon` : undefined}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          transition={{ type: "spring", stiffness: 250, damping: 25 }}
           className="flex items-center text-[#737373] mr-2 shrink-0"
         >
           <Search size={variant === "compact" ? 16 : 18} />
         </motion.div>
         <motion.input
           layoutId={layoutIdPrefix ? `${layoutIdPrefix}-input` : undefined}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          transition={{ type: "spring", stiffness: 250, damping: 25 }}
           ref={inputRef as any}
           type="text"
           value={query}

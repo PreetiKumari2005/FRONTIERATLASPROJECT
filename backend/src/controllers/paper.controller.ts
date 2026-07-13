@@ -2,7 +2,36 @@ import { Context } from "hono";
 import * as paperService from "../services/paper.service.js";
 import { redisManager } from "../lib/redis.js";
 import { QueryRouter } from "../routing/index.js";
-import { IdResolver } from "../routing/IdResolver.js";
+
+// ---------------------------------------------------------------------------
+// Version-counter helpers
+// Instead of redis.keys("papers:*") O(N) scan, we maintain a lightweight
+// integer version in Redis. On any mutation, we INCR the version.
+// All list cache keys embed the version, so old keys expire by TTL silently.
+// ---------------------------------------------------------------------------
+
+const getPapersVersion = async (): Promise<string> => {
+  try {
+    const redis = redisManager.getClient();
+    const v = await redis.get("papers:version");
+    return v ? String(v) : "0";
+  } catch {
+    return "0";
+  }
+};
+
+const bumpPapersVersion = async (): Promise<void> => {
+  try {
+    const redis = redisManager.getClient();
+    await redis.incr("papers:version");
+  } catch (err) {
+    console.error("Redis version bump failed:", err);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
 
 export const ingestPaper = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
@@ -10,15 +39,11 @@ export const ingestPaper = async (c: Context) => {
 
   const newPaper = await paperService.ingestPaper(queryRouter, body.content);
 
-  // Invalidate caches
-  const redis = redisManager.getClient();
+  // Invalidate list cache via version bump (replaces the old redis.keys scan)
+  await bumpPapersVersion();
   try {
+    const redis = redisManager.getClient();
     await redis.del(`paper:${newPaper.slug}`);
-
-    const keys = await redis.keys("papers:*");
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
   } catch (err) {
     console.error("Redis cache invalidation failed:", err);
   }
@@ -45,12 +70,14 @@ export const getPapers = async (c: Context) => {
   const limit = Number(c.req.query("limit")) || 20;
   const cursor = c.req.query("cursor");
 
-  const cacheKey = `papers:${JSON.stringify({ sort, task, method, model, period, page, limit, cursor })}`;
-
   try {
     const redis = redisManager.getClient();
-    let cached = null;
 
+    // Read the current version — one fast Redis GET, prevents any O(N) scan on invalidation
+    const version = await getPapersVersion();
+    const cacheKey = `papers:v${version}:${JSON.stringify({ sort, task, method, model, period, page, limit, cursor })}`;
+
+    let cached = null;
     try {
       cached = await redis.get(cacheKey);
     } catch (err) {
@@ -96,8 +123,6 @@ export const getPapers = async (c: Context) => {
       {
         status: "error",
         detail: message,
-        dbUrl: (c.env as any).DATABASE_URL,
-        bindings: Object.keys(c.env || {}),
       },
       status,
     );
@@ -120,18 +145,27 @@ export const getPaperBySlug = async (c: Context) => {
     }
 
     if (cached) {
+      if ((cached as any).is404) {
+        return c.json(cached as any, 404);
+      }
       return c.json(cached as any, 200);
     }
 
     const paper = await paperService.getPaperBySlug(queryRouter, slug);
     if (!paper) {
-      return c.json({ status: "error", message: "Paper not found" }, 404);
+      const response404 = { status: "error", message: "Paper not found", is404: true };
+      try {
+        await redis.set(cacheKey, response404, { ex: 60 }); // Cache 404 for 60 seconds
+      } catch (err) {
+        console.error("Redis SET 404 failed:", err);
+      }
+      return c.json(response404, 404);
     }
 
     const response = { status: "success", data: paper };
 
     try {
-      await redis.set(cacheKey, response, { ex: 300 });
+      await redis.set(cacheKey, response, { ex: 1800 });
     } catch (err) {
       console.error("Redis SET failed:", err);
     }
@@ -144,20 +178,52 @@ export const getPaperBySlug = async (c: Context) => {
 
 export const getPaperById = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
-  const idResolver = c.var.idResolver as IdResolver | undefined; // optional fallback
   const id = c.req.param("id");
 
   if (!id) {
     return c.json({ status: "error", message: "ID is required" }, 400);
   }
 
+  // Cache the full paper response.
+  const cacheKey = `paper:id:${id}`;
+
   try {
-    const paper = await paperService.getPaperById(queryRouter, id, idResolver);
-    if (!paper) {
-      return c.json({ status: "error", message: "Paper not found" }, 404);
+    const redis = redisManager.getClient();
+
+    let cached = null;
+    try {
+      cached = await redis.get(cacheKey);
+    } catch (err) {
+      console.error("Redis GET failed:", err);
     }
 
-    return c.json({ status: "success", data: paper }, 200);
+    if (cached) {
+      if ((cached as any).is404) {
+        return c.json(cached as any, 404);
+      }
+      return c.json(cached as any, 200);
+    }
+
+    const paper = await paperService.getPaperById(queryRouter, id);
+    if (!paper) {
+      const response404 = { status: "error", message: "Paper not found", is404: true };
+      try {
+        await redis.set(cacheKey, response404, { ex: 60 }); // Cache 404 for 60 seconds
+      } catch (err) {
+        console.error("Redis SET 404 failed:", err);
+      }
+      return c.json(response404, 404);
+    }
+
+    const response = { status: "success", data: paper };
+
+    try {
+      await redis.set(cacheKey, response, { ex: 300 }); // 5 minutes
+    } catch (err) {
+      console.error("Redis SET failed:", err);
+    }
+
+    return c.json(response, 200);
   } catch (error: any) {
     console.error("[getPaperById] Error:", error);
     return c.json({ status: "error", detail: error.message }, 500);
@@ -180,13 +246,14 @@ export const updatePaper = async (c: Context) => {
       return c.json({ status: "error", message: "Paper not found" }, 404);
     }
 
-    // Invalidate caches
-    const redis = redisManager.getClient();
+    // Bump version (invalidates all versioned list keys silently via TTL)
+    await bumpPapersVersion();
     try {
+      const redis = redisManager.getClient();
       await redis.del(`paper:${slug}`);
-      const keys = await redis.keys("papers:*");
-      if (keys.length > 0) {
-        await redis.del(...keys);
+      // Also invalidate the by-id cache if we know the id
+      if ((updatedPaper as any).id) {
+        await redis.del(`paper:id:${(updatedPaper as any).id}`);
       }
     } catch (err) {
       console.error("Cache invalidation failed:", err);
@@ -205,14 +272,11 @@ export const deletePaper = async (c: Context) => {
   try {
     await paperService.deletePaper(queryRouter, slug);
 
-    // Invalidate caches
-    const redis = redisManager.getClient();
+    // Bump version (invalidates all versioned list keys silently via TTL)
+    await bumpPapersVersion();
     try {
+      const redis = redisManager.getClient();
       await redis.del(`paper:${slug}`);
-      const keys = await redis.keys("papers:*");
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
     } catch (err) {
       console.error("Cache invalidation failed:", err);
     }
@@ -226,13 +290,55 @@ export const deletePaper = async (c: Context) => {
 export const searchPapers = async (c: Context) => {
   const queryRouter = c.var.queryRouter as QueryRouter;
 
-  const searchQuery = {
-    q: c.req.query("q")?.trim(),
-    limit: c.req.query("limit") ? Number(c.req.query("limit")) : undefined,
-    page: c.req.query("page") ? Number(c.req.query("page")) : undefined,
-    sort: c.req.query("sort"),
-  };
+  const q = c.req.query("q")?.trim() || "";
+  const sort = c.req.query("sort") || "relevance";
+  const page = c.req.query("page") ? Number(c.req.query("page")) : 1;
+  const limit = c.req.query("limit") ? Number(c.req.query("limit")) : 20;
 
+  const searchQuery = { q, sort, page, limit };
+
+  // Only attempt caching for non-empty queries
+  if (q) {
+    const normalizedQ = q.toLowerCase();
+    const cacheKey = `search:${normalizedQ}:${sort}:${page}:${limit}`;
+
+    try {
+      const redis = redisManager.getClient();
+
+      let cached = null;
+      try {
+        cached = await redis.get(cacheKey);
+      } catch (err) {
+        console.error("Redis GET failed:", err);
+      }
+
+      if (cached) {
+        return c.json(cached as any, 200);
+      }
+
+      const result = await paperService.searchPapers(queryRouter, searchQuery);
+      const response = { status: "success", data: result };
+
+      // Only cache results that actually returned data (avoid caching empty hits)
+      if (result.papers.length > 0) {
+        try {
+          await redis.set(cacheKey, response, { ex: 300 }); // 5 minutes
+        } catch (err) {
+          console.error("Redis SET failed:", err);
+        }
+      }
+
+      return c.json(response, 200);
+    } catch (error: any) {
+      console.error("Search error:", error);
+      return c.json(
+        { status: "error", message: error.message || "Search failed" },
+        500,
+      );
+    }
+  }
+
+  // Empty query path — skip cache entirely
   try {
     const result = await paperService.searchPapers(queryRouter, searchQuery);
     return c.json({ status: "success", data: result }, 200);

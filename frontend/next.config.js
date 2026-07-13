@@ -19,7 +19,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "arxiv.org",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
+  },
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
   async rewrites() {
     if (process.env.NODE_ENV !== "development") {
