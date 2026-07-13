@@ -350,7 +350,7 @@ export default function BenchmarkDetailPage() {
             </nav>
 
             {/* § 1 — HERO */}
-            <div className="relative rounded-3xl overflow-hidden mb-8 bg-white border border-[#E8E8E2]">
+            <div className="relative rounded-3xl overflow-hidden mb-8 bg-[#F8F7F2] border border-[#E8E8E2] hover:bg-white transition-colors duration-200">
               <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg,#FF5A1F 0%,#FFB347 50%,#FF5A1F 100%)" }} />
 
               <div className="p-6 md:p-8">
@@ -409,7 +409,7 @@ export default function BenchmarkDetailPage() {
               <div className="mb-8">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#9CA3AF] mb-2">Source</p>
                 <Link href={`/papers/${sourcePaper.slug}`} className="no-underline group block w-fit">
-                  <div className="border border-[#E2E1DC] rounded-lg p-4 bg-white hover:border-[#C8C8C2] hover:shadow-sm transition-all max-w-2xl">
+                  <div className="border border-[#E2E1DC] rounded-lg p-4 bg-[#F8F7F2] hover:bg-white hover:border-[#C8C8C2] hover:shadow-sm transition-all max-w-2xl">
                     <p className="text-[14px] font-semibold text-[#111111] group-hover:text-[#FF5A1F] transition-colors leading-snug underline underline-offset-2 decoration-[#E2E1DC] group-hover:decoration-[#FF5A1F] mb-1.5">
                       {sourcePaper.title}
                     </p>
@@ -420,7 +420,7 @@ export default function BenchmarkDetailPage() {
             )}
 
             {/* § 3 — SOTA PROGRESSION CHART */}
-            <div className="bg-white border border-[#E8E8E2] rounded-2xl p-6 mb-8">
+            <div className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-2xl p-6 mb-8 hover:bg-white transition-colors duration-200">
               <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
                 <div>
                   <h2 className="text-[16px] font-bold text-[#111111]">SOTA progression</h2>
@@ -434,7 +434,7 @@ export default function BenchmarkDetailPage() {
             </div>
 
             {/* § 4 — LEADERBOARD TABLE */}
-            <div className="bg-white border border-[#E8E8E2] rounded-2xl overflow-hidden mb-8">
+            <div className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-2xl overflow-hidden mb-8 hover:bg-white transition-colors duration-200">
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0EDE8] flex-wrap gap-3">
                 <h2 className="text-[16px] font-bold text-[#111111]">
                   Leaderboard
@@ -461,7 +461,7 @@ export default function BenchmarkDetailPage() {
 
             {/* § 5 — SOTA CLAIMS */}
             {benchmark.claims.length > 0 && (
-              <div className="bg-white border border-[#E8E8E2] rounded-2xl overflow-hidden">
+              <div className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-2xl overflow-hidden hover:bg-white transition-colors duration-200">
                 <div className="px-5 py-4 border-b border-[#F0EDE8]">
                   <h2 className="text-[16px] font-bold text-[#111111]">
                     SOTA Claimants

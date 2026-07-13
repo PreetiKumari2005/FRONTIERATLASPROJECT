@@ -214,7 +214,7 @@ export default function BenchmarksPage() {
           <main className="flex-1 min-w-0 space-y-12">
 
             {/* ══ § HERO ══ */}
-            <section className="bg-white border border-[#E8E8E2] rounded-[24px] overflow-hidden shadow-card">
+            <section className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[24px] overflow-hidden shadow-card hover:bg-white transition-colors duration-300">
               <div className="h-[4px] w-full"
                 style={{ background: "linear-gradient(90deg,#FF5A1F 0%,#FFB347 60%,#FF5A1F 100%)" }} />
               <div className="p-6 md:p-10">
@@ -285,7 +285,7 @@ export default function BenchmarksPage() {
             </section>
 
             {/* ══ § BROWSE BY DOMAIN ══ */}
-            <section className="bg-white border border-[#E8E8E2] rounded-[20px] p-6 shadow-card">
+            <section className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[20px] p-6 shadow-card hover:bg-white transition-colors duration-200">
               <SectionHeading label="Browse by Domain" />
               <div className="flex flex-wrap gap-2.5">
                 {DOMAINS.map(d => (
@@ -303,7 +303,7 @@ export default function BenchmarksPage() {
             </section>
 
             {/* ══ § BROWSE BY TASK ══ */}
-            <section className="bg-white border border-[#E8E8E2] rounded-[20px] p-6 shadow-card">
+            <section className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[20px] p-6 shadow-card hover:bg-white transition-colors duration-200">
               <SectionHeading label="Browse by Task" />
               <div className="flex flex-wrap gap-2.5">
                 {TASKS.map(t => (
@@ -321,14 +321,14 @@ export default function BenchmarksPage() {
             </section>
 
             {/* ══ § BENCHMARK COLLECTIONS ══ */}
-            <section className="bg-white border border-[#E8E8E2] rounded-[20px] p-6 shadow-card">
+            <section className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[20px] p-6 shadow-card hover:bg-white transition-colors duration-200">
               <SectionHeading label="Benchmark Collections" />
               <div className="flex flex-wrap gap-2.5">
                 {COLLECTIONS.map(c => (
                   <Link key={c.slug} href={`/benchmarks?collection=${c.slug}`}
                     className="no-underline group">
-                    <div className="bg-[#FAFAF8] border border-[#E8E8E2] rounded-xl px-4 py-3 flex items-center gap-3
-                      hover:border-[#FF5A1F] hover:bg-[#FFF8F5]/30 hover:-translate-y-0.5 transition-all duration-200">
+                    <div className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-xl px-4 py-3 flex items-center gap-3
+                      hover:border-[#FF5A1F] hover:bg-white hover:-translate-y-0.5 transition-all duration-200">
                       <FolderOpen size={14} className="text-[#FF5A1F] group-hover:scale-110 transition-transform" />
                       <span className="text-[13px] font-bold text-[#111111] group-hover:text-[#FF5A1F] transition-colors leading-none">
                         {c.label}
@@ -343,14 +343,14 @@ export default function BenchmarksPage() {
             </section>
 
             {/* ══ § POPULAR BENCHMARKS ══ */}
-            <section className="bg-white border border-[#E8E8E2] rounded-[20px] p-6 shadow-card">
+            <section className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[20px] p-6 shadow-card hover:bg-white transition-colors duration-200">
               <SectionHeading label="Popular Benchmarks" />
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {POPULAR.map((p, i) => (
                   <Link key={p.slug} href={`/benchmarks/${p.slug}`}
                     className="no-underline group">
-                    <div className="flex items-center gap-3 bg-[#FAFAF8] border border-[#E8E8E2] rounded-xl px-4 py-3
-                      hover:border-[#FF5A1F] hover:bg-[#FFF8F5]/40 hover:-translate-y-0.5 transition-all duration-200">
+                    <div className="flex items-center gap-3 bg-[#F8F7F2] border border-[#E8E8E2] rounded-xl px-4 py-3
+                      hover:border-[#FF5A1F] hover:bg-white hover:-translate-y-0.5 transition-all duration-200">
                       <span className="text-[11px] font-mono font-bold text-[#C8C8C2] w-5 shrink-0 tabular-nums">
                         {String(i + 1).padStart(2, "0")}
                       </span>
@@ -367,7 +367,7 @@ export default function BenchmarksPage() {
 
             {/* ══ § RECENTLY ADDED + TRENDING ══ */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white border border-[#E8E8E2] rounded-[20px] p-6 shadow-card">
+              <div className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[20px] p-6 shadow-card hover:bg-white transition-colors duration-200">
                 <div className="flex items-center justify-between mb-4 border-b border-[#F0EFEA] pb-3">
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="text-[#FF5A1F]" />
@@ -384,8 +384,8 @@ export default function BenchmarksPage() {
                     const meta = getMeta(b.name);
                     return (
                       <Link key={b.id} href={`/benchmarks/${b.slug}`}
-                        className="no-underline flex items-center justify-between px-4 py-3 bg-[#FAFAF8] border border-[#F0EFEA] rounded-xl
-                          hover:bg-[#FFF8F5]/30 hover:border-[#FF5A1F]/30 group transition-all duration-200">
+                        className="no-underline flex items-center justify-between px-4 py-3 bg-[#F8F7F2] border border-[#F0EFEA] rounded-xl
+                          hover:bg-white hover:border-[#FF5A1F]/30 group transition-all duration-200">
                         <div className="min-w-0 pr-4">
                           <p className="text-[13px] font-bold text-[#111111] group-hover:text-[#FF5A1F] transition-colors truncate">
                             {b.name}
@@ -399,7 +399,7 @@ export default function BenchmarksPage() {
                 </div>
               </div>
 
-              <div className="bg-white border border-[#E8E8E2] rounded-[20px] p-6 shadow-card">
+              <div className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[20px] p-6 shadow-card hover:bg-white transition-colors duration-200">
                 <div className="flex items-center justify-between mb-4 border-b border-[#F0EFEA] pb-3">
                   <div className="flex items-center gap-2">
                     <Flame size={16} className="text-[#FF5A1F]" />
@@ -416,8 +416,8 @@ export default function BenchmarksPage() {
                     const meta = getMeta(b.name);
                     return (
                       <Link key={b.id} href={`/benchmarks/${b.slug}`}
-                        className="no-underline flex items-center justify-between px-4 py-3 bg-[#FAFAF8] border border-[#F0EFEA] rounded-xl
-                          hover:bg-[#FFF8F5]/30 hover:border-[#FF5A1F]/30 group transition-all duration-200">
+                        className="no-underline flex items-center justify-between px-4 py-3 bg-[#F8F7F2] border border-[#F0EFEA] rounded-xl
+                          hover:bg-white hover:border-[#FF5A1F]/30 group transition-all duration-200">
                         <div className="flex items-center gap-3 min-w-0 pr-4">
                           <span className="text-[11px] font-mono font-bold text-[#C8C8C2] w-4 shrink-0 tabular-nums">{i + 1}</span>
                           <div className="min-w-0">
@@ -441,7 +441,7 @@ export default function BenchmarksPage() {
             </section>
 
             {/* ══ § BENCHMARK DIRECTORY ══ */}
-            <section id="directory" className="bg-white border border-[#E8E8E2] rounded-[24px] p-6 shadow-card space-y-6">
+            <section id="directory" className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[24px] p-6 shadow-card space-y-6 hover:bg-white transition-colors duration-200">
               <div className="flex items-center justify-between gap-4 flex-wrap border-b border-[#F0EFEA] pb-5">
                 <div>
                   <h2 className="text-[18px] font-black text-[#111111] tracking-tight">Benchmark Directory</h2>
@@ -649,7 +649,7 @@ export default function BenchmarksPage() {
             </section>
 
             {/* ══ § FOOTER CTA ══ */}
-            <section className="bg-white border border-[#E8E8E2] rounded-[24px] p-8 md:p-12 text-center shadow-card relative overflow-hidden">
+            <section className="bg-[#F8F7F2] border border-[#E8E8E2] rounded-[24px] p-8 md:p-12 text-center shadow-card relative overflow-hidden hover:bg-white transition-colors duration-200">
               <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#FFF3EE] rounded-full blur-2xl pointer-events-none" />
               <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-[#FFF3EE] rounded-full blur-2xl pointer-events-none" />
               <div className="relative z-10 max-w-xl mx-auto space-y-4">
