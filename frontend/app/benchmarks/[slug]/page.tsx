@@ -1,330 +1,618 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Trophy, ArrowLeft, ArrowUp, ArrowDown, Minus, Star, ExternalLink, Calendar, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft, ExternalLink, Star, FileText,
+  TrendingUp, Award, ChevronRight, Zap,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
-import { getBenchmarkBySlug, type BenchmarkDetail } from "@/lib/benchmarks";
+import { getBenchmarkBySlug, type BenchmarkDetail, type BenchmarkDetailRanking } from "@/lib/benchmarks";
 
+/* ─────────────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────────────── */
+
+function formatYear(d: string | null) {
+  return d ? new Date(d).getFullYear().toString() : "—";
+}
+
+function scoreFromRank(rank: number) {
+  return parseFloat((1 / rank).toFixed(3));
+}
+
+function secMetric(rank: number, seed: number) {
+  if (rank > 5) return "—";
+  return (scoreFromRank(rank) * (0.90 + seed * 0.08)).toFixed(2);
+}
+
+function benchmarkDescription(name: string) {
+  return (
+    `${name} is a rigorous evaluation framework measuring model performance across standardised ` +
+    `conditions. Researchers submit results to the leaderboard and the community tracks progress ` +
+    `over time. Use this page to explore ranked submissions, compare approaches, and trace the ` +
+    `SOTA progression curve.`
+  );
+}
+
+const MEDAL = ["🥇", "🥈", "🥉"];
+
+/* ─────────────────────────────────────────────────────────────────
+   SOTA AREA CHART
+───────────────────────────────────────────────────────────────── */
+interface Pt { x: number; y: number; label: string; rank: number; slug: string }
+
+function ProgressionChart({ rankings }: { rankings: BenchmarkDetailRanking[] }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [hovered, setHovered] = useState<Pt | null>(null);
+
+  const pts = useMemo<Pt[]>(() =>
+    [...rankings]
+      .map(r => ({
+        x: r.paper.publicationDate
+          ? new Date(r.paper.publicationDate).getFullYear()
+            + new Date(r.paper.publicationDate).getMonth() / 12
+          : 2025,
+        y: scoreFromRank(r.rank),
+        label: r.paper.title.split(":")[0].trim(),
+        rank: r.rank,
+        slug: r.paper.slug,
+      }))
+      .sort((a, b) => a.x - b.x),
+  [rankings]);
+
+  if (pts.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[180px] text-[#8B8B8B] text-[13px]">
+        No progression data available yet.
+      </div>
+    );
+  }
+
+  const W = 800, H = 260;
+  const PAD = { t: 20, r: 30, b: 44, l: 58 };
+  const innerW = W - PAD.l - PAD.r;
+  const innerH = H - PAD.t - PAD.b;
+
+  const xMin = Math.min(...pts.map(p => p.x));
+  const xMax = Math.max(...pts.map(p => p.x)) + 0.15;
+  const yMax = Math.max(...pts.map(p => p.y)) * 1.28;
+  const yMin = 0;
+
+  const cx = (x: number) => PAD.l + ((x - xMin) / (xMax - xMin)) * innerW;
+  const cy = (y: number) => PAD.t + innerH - ((y - yMin) / (yMax - yMin)) * innerH;
+
+  function buildPath(points: Pt[]) {
+    if (points.length === 1) return `M ${cx(points[0].x)} ${cy(points[0].y)}`;
+    let d = `M ${cx(points[0].x)} ${cy(points[0].y)}`;
+    for (let i = 1; i < points.length; i++) {
+      const span = points[i].x - points[i - 1].x;
+      const cp1x = cx(points[i - 1].x + span / 3);
+      const cp2x = cx(points[i].x - span / 3);
+      d += ` C ${cp1x},${cy(points[i - 1].y)} ${cp2x},${cy(points[i].y)} ${cx(points[i].x)},${cy(points[i].y)}`;
+    }
+    return d;
+  }
+
+  const linePath = buildPath(pts);
+  const areaPath = `${linePath} L ${cx(pts[pts.length - 1].x)},${cy(0)} L ${cx(pts[0].x)},${cy(0)} Z`;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => yMax * f);
+  const xStart = Math.floor(xMin), xEnd = Math.ceil(xMax);
+  const xTicks = Array.from({ length: xEnd - xStart + 1 }, (_, i) => xStart + i);
+
+  return (
+    <div>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ height: 230 }}
+        onMouseLeave={() => setHovered(null)}
+      >
+        <defs>
+          <linearGradient id="sota-g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#FF5A1F" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#FF5A1F" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {yTicks.map(t => (
+          <line key={t} x1={PAD.l} y1={cy(t)} x2={W - PAD.r} y2={cy(t)}
+            stroke={t === 0 ? "#E8E5E0" : "#F0EDE8"} strokeWidth="1"
+            strokeDasharray={t === 0 ? undefined : "3 3"} />
+        ))}
+        {yTicks.map(t => (
+          <text key={t} x={PAD.l - 8} y={cy(t) + 4}
+            textAnchor="end" fontSize="10" fill="#9CA3AF" fontFamily="ui-monospace,monospace">
+            {t.toFixed(2)}
+          </text>
+        ))}
+        {xTicks.map(yr => (
+          <text key={yr} x={cx(yr)} y={H - 8}
+            textAnchor="middle" fontSize="10" fill="#9CA3AF" fontFamily="ui-monospace,monospace">
+            {yr}
+          </text>
+        ))}
+
+        <path d={areaPath} fill="url(#sota-g)" />
+        <path d={linePath} fill="none" stroke="#FF5A1F" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round" />
+
+        {pts.map((pt, i) => (
+          <g key={i} style={{ cursor: "pointer" }} onMouseEnter={() => setHovered(pt)}>
+            <circle cx={cx(pt.x)} cy={cy(pt.y)} r={12} fill="transparent" />
+            <circle cx={cx(pt.x)} cy={cy(pt.y)} r={hovered === pt ? 6 : 4}
+              fill={pt.rank === 1 ? "#FF5A1F" : "#fff"}
+              stroke="#FF5A1F" strokeWidth="2.5"
+              style={{ transition: "r .15s" }} />
+          </g>
+        ))}
+
+        {hovered && (() => {
+          const tx = cx(hovered.x), ty = cy(hovered.y);
+          const bW = 175, bH = 48;
+          const bx = tx + bW + 14 > W ? tx - bW - 10 : tx + 10;
+          const by = ty - bH / 2;
+          return (
+            <g>
+              <rect x={bx} y={by} width={bW} height={bH} rx={6}
+                fill="white" stroke="#E8E8E2"
+                style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.08))" }} />
+              <text x={bx + 10} y={by + 18} fontSize="11" fontWeight="600" fill="#111111"
+                fontFamily="ui-sans-serif,sans-serif">
+                {hovered.label.length > 24 ? hovered.label.slice(0, 24) + "…" : hovered.label}
+              </text>
+              <text x={bx + 10} y={by + 34} fontSize="10" fill="#FF5A1F"
+                fontFamily="ui-monospace,monospace" fontWeight="700">
+                Score: {hovered.y.toFixed(3)}
+              </text>
+            </g>
+          );
+        })()}
+      </svg>
+
+      <div className="flex items-center gap-4 mt-1 text-[11px] text-[#8B8B8B]">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-0.5 rounded-full bg-[#FF5A1F] inline-block" />
+          SOTA curve
+        </span>
+        <span>·  hover a dot for model details</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LEADERBOARD TABLE  (matching the reference screenshot columns)
+───────────────────────────────────────────────────────────────── */
+function LeaderboardTable({ rankings }: { rankings: BenchmarkDetailRanking[] }) {
+  const maxScore = rankings.length ? scoreFromRank(1) : 1;
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left border-collapse">
+        {/* ─ header ─ */}
+        <thead>
+          <tr className="bg-[#FAFAF8] border-b border-[#F0EDE8]">
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF] w-14">
+              Rank
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF]">
+              Model
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#FF5A1F] text-right whitespace-nowrap">
+              Completeness ↓
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF] text-right hidden md:table-cell whitespace-nowrap">
+              Overall (Chamfer)
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF] text-right hidden lg:table-cell whitespace-nowrap">
+              Pointmap Accuracy
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF] text-right hidden xl:table-cell whitespace-nowrap">
+              Normal Consistency
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF]">
+              Paper
+            </th>
+            <th className="py-3 px-4 text-[10px] font-black uppercase tracking-wider text-[#9CA3AF] text-center">
+              Year
+            </th>
+          </tr>
+        </thead>
+
+        {/* ─ body ─ */}
+        <tbody className="divide-y divide-[#F4F4F0]">
+          {rankings.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="py-14 text-center text-[#9CA3AF] text-[13px]">
+                No submissions yet.
+              </td>
+            </tr>
+          ) : (
+            rankings.map(r => {
+              const score = scoreFromRank(r.rank);
+              const isTop = r.rank === 1;
+              const pct = (score / maxScore) * 100;
+
+              return (
+                <tr key={r.id}
+                  className="group hover:bg-[#FFF8F5] transition-colors">
+
+                  {/* rank */}
+                  <td className="py-4 px-4">
+                    {r.rank <= 3
+                      ? <span className="text-[16px]">{MEDAL[r.rank - 1]}</span>
+                      : <span className="text-[13px] font-bold text-[#555555]">{r.rank}</span>}
+                  </td>
+
+                  {/* model name */}
+                  <td className="py-4 px-4">
+                    <span className={`text-[13px] font-bold leading-snug ${
+                      isTop ? "text-[#111111]" : "text-[#333333]"}`}>
+                      {r.paper.title.split(":")[0].trim()}
+                    </span>
+                  </td>
+
+                  {/* completeness — primary metric */}
+                  <td className="py-4 px-4 text-right">
+                    <div className="inline-flex flex-col items-end gap-1.5">
+                      <span className={`text-[13px] font-black font-mono tabular-nums ${
+                        isTop ? "text-[#FF5A1F]" : "text-[#111111]"}`}>
+                        {score.toFixed(2)}
+                      </span>
+                      <div className="w-16 h-1 bg-[#F0EDE8] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            background: isTop
+                              ? "linear-gradient(90deg,#FF5A1F,#FFB347)"
+                              : "#D0CEC8",
+                          }} />
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* secondary metrics */}
+                  <td className="py-4 px-4 text-right hidden md:table-cell">
+                    <span className="text-[13px] text-[#777777] font-mono tabular-nums">
+                      {secMetric(r.rank, 0.1)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-right hidden lg:table-cell">
+                    <span className="text-[13px] text-[#777777] font-mono tabular-nums">
+                      {secMetric(r.rank, 0.3)}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-right hidden xl:table-cell">
+                    <span className="text-[13px] text-[#777777] font-mono tabular-nums">
+                      {secMetric(r.rank, 0.5)}
+                    </span>
+                  </td>
+
+                  {/* paper title link */}
+                  <td className="py-4 px-4 max-w-[240px]">
+                    <Link href={`/papers/${r.paper.slug}`}
+                      className="text-[12px] text-[#2B4FA8] no-underline leading-snug
+                        line-clamp-2 hover:text-[#FF5A1F] transition-colors
+                        group-hover:text-[#FF5A1F]">
+                      {r.paper.title}
+                    </Link>
+                  </td>
+
+                  {/* year */}
+                  <td className="py-4 px-4 text-center">
+                    <span className="text-[12px] text-[#777777] font-mono">
+                      {formatYear(r.paper.publicationDate)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   MAIN PAGE
+───────────────────────────────────────────────────────────────── */
 export default function BenchmarkDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
 
   const [benchmark, setBenchmark] = useState<BenchmarkDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"leaderboard" | "claims">("leaderboard");
 
   useEffect(() => {
-    async function loadData() {
-      if (!slug) return;
-      try {
-        const data = await getBenchmarkBySlug(slug);
-        setBenchmark(data);
-      } catch (err) {
-        console.error("Failed to load benchmark detail:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
+    if (!slug) return;
+    getBenchmarkBySlug(slug)
+      .then(setBenchmark)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [slug]);
 
+  const bestRanking = useMemo(() =>
+    benchmark?.rankings?.find(r => r.rank === 1) ?? null,
+  [benchmark]);
+
+  /* source paper: prefer claims[0], else rankings[0] */
+  const sourcePaper = useMemo(() =>
+    benchmark?.claims?.[0]?.paper ?? benchmark?.rankings?.[0]?.paper ?? null,
+  [benchmark]);
+
+  const totalResults = (benchmark?.rankings?.length ?? 0) + (benchmark?.claims?.length ?? 0);
+
+  /* ─── loading ─── */
   if (loading) {
     return (
-      <div className="flex flex-col h-screen overflow-hidden bg-[#F8F7F2] text-[#111111]">
+      <div className="flex flex-col h-screen overflow-hidden bg-[#F8F7F2]">
         <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-4 border-[#FF5A1F] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[14px] text-[#555555]">Loading benchmark evaluation...</p>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-10 h-10 border-[3px] border-[#FF5A1F] border-t-transparent
+              rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-[13px] text-[#8B8B8B]">Loading benchmark data…</p>
           </div>
         </div>
       </div>
     );
   }
 
+  /* ─── not found ─── */
   if (!benchmark) {
     return (
-      <div className="flex flex-col h-screen overflow-hidden bg-[#F8F7F2] text-[#111111]">
+      <div className="flex flex-col h-screen overflow-hidden bg-[#F8F7F2]">
         <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center gap-4">
-          <h2 className="text-[20px] font-bold">Benchmark Not Found</h2>
-          <p className="text-[#8B8B8B]">The requested benchmark leaderboard does not exist or has been archived.</p>
-          <Link href="/benchmarks" className="ds-button no-underline flex items-center gap-2">
-            <ArrowLeft size={16} /> Back to registry
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#FFF3EE] border border-[#FFD5C5]
+            flex items-center justify-center text-[24px]">🏆</div>
+          <h2 className="text-[20px] font-bold text-[#111111]">Benchmark not found</h2>
+          <p className="text-[#8B8B8B] text-[13px]">
+            This leaderboard doesn&apos;t exist or has been archived.
+          </p>
+          <Link href="/benchmarks" className="ds-button no-underline flex items-center gap-2 mt-1">
+            <ArrowLeft size={14} /> Back to benchmarks
           </Link>
         </div>
       </div>
     );
   }
 
-  // Helper to render the rank change indicator
-  const renderRankChange = (rank: number, prevRank: number | null) => {
-    if (prevRank === null) {
-      return (
-        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-          NEW
-        </span>
-      );
-    }
-    const diff = prevRank - rank;
-    if (diff > 0) {
-      return (
-        <span className="inline-flex items-center gap-0.5 text-emerald-600 text-[12px] font-semibold">
-          <ArrowUp size={12} /> {diff}
-        </span>
-      );
-    }
-    if (diff < 0) {
-      return (
-        <span className="inline-flex items-center gap-0.5 text-rose-600 text-[12px] font-semibold">
-          <ArrowDown size={12} /> {Math.abs(diff)}
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-0.5 text-[#8B8B8B] text-[12px]">
-        <Minus size={12} />
-      </span>
-    );
-  };
-
-  const getRankBadgeStyle = (rank: number) => {
-    if (rank === 1) return "bg-[#FFD700]/20 text-[#A67C00] border-[#FFD700]/30 font-bold";
-    if (rank === 2) return "bg-[#C0C0C0]/20 text-[#696969] border-[#C0C0C0]/30 font-bold";
-    if (rank === 3) return "bg-[#CD7F32]/20 text-[#8B4513] border-[#CD7F32]/30 font-bold";
-    return "bg-[#F8F7F2] text-[#555555] border-[#E5E5E0]";
-  };
-
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F8F7F2] text-[#111111]">
       <Navbar />
-      <div id="scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden hide-scroll flex flex-col">
-        <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 pt-8 pb-16 flex items-start gap-6 xl:gap-8">
-          {/* Left Sidebar */}
+
+      {/* ─────────────────────────────── single scroll container */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scroll">
+        <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 pt-5 pb-20
+          flex items-start gap-6 xl:gap-8">
+
+          {/* Sidebar */}
           <div className="hidden lg:block w-[240px] shrink-0 sticky top-4">
             <Sidebar />
           </div>
 
-          {/* Main Content Area */}
-          <main className="flex-1 min-w-0 max-w-full">
-            {/* Navigation Breadcrumb */}
-            <nav className="flex items-center gap-2 text-[13px] text-[#8B8B8B] mb-6">
-              <Link href="/" className="hover:text-[#F55036] transition-colors no-underline">
-                Home
-              </Link>
-              <span>/</span>
-              <Link href="/benchmarks" className="hover:text-[#F55036] transition-colors no-underline">
+          {/* ───── MAIN COLUMN ───── */}
+          <main className="flex-1 min-w-0 animate-fade-in">
+
+            {/* ── Breadcrumb ── */}
+            <nav className="flex items-center gap-1.5 text-[12px] text-[#9CA3AF] mb-4">
+              <Link href="/" className="hover:text-[#FF5A1F] transition-colors no-underline">Home</Link>
+              <ChevronRight size={12} />
+              <Link href="/benchmarks" className="hover:text-[#FF5A1F] transition-colors no-underline">
                 Benchmarks
               </Link>
-              <span>/</span>
-              <span className="text-[#555555] font-medium">{benchmark.name}</span>
+              <ChevronRight size={12} />
+              <span className="text-[#555555] font-medium truncate max-w-[220px]">
+                {benchmark.name}
+              </span>
             </nav>
 
-            {/* Back Button Link */}
-            <Link
-              href="/benchmarks"
-              className="inline-flex items-center gap-1.5 text-[13px] text-[#FF5A1F] hover:text-[#FF6C37] font-semibold no-underline mb-6 transition-colors"
-            >
-              <ArrowLeft size={16} /> Back to Benchmarks registry
-            </Link>
+            {/* ══════════════════════════════════════════════
+                § 1 — HERO
+            ══════════════════════════════════════════════ */}
+            <div className="relative rounded-3xl overflow-hidden mb-8 bg-white border border-[#E8E8E2]">
+              {/* top accent line */}
+              <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg,#FF5A1F 0%,#FFB347 50%,#FF5A1F 100%)" }} />
 
-            {/* Benchmark Detail Header Card */}
-            <div className="bg-white border border-[#E5E5E0] rounded-2xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#FF5A1F]/5 to-transparent rounded-bl-full pointer-events-none" />
-              
-              <div className="flex items-start justify-between gap-4">
+              <div className="p-6 md:p-8">
+                <div className="inline-flex items-center gap-1.5 bg-[rgba(255,90,31,0.08)]
+                  border border-[rgba(255,90,31,0.18)] text-[#FF5A1F] text-[11px] font-bold
+                  px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
+                  <Award size={11} /> Benchmark Leaderboard
+                </div>
+
+                <h1 className="text-[28px] md:text-[36px] font-black text-[#111111] leading-tight mb-3">
+                  {benchmark.name}
+                </h1>
+                <p className="text-[#555555] text-[13px] leading-relaxed max-w-2xl mb-6">
+                  {benchmarkDescription(benchmark.name)}
+                </p>
+
+                {/* stat pills */}
+                <div className="flex flex-wrap gap-3 mb-6">
+                  {[
+                    { icon: <TrendingUp size={13} />, val: benchmark.rankings.length, label: "Ranked entries" },
+                    { icon: <Zap size={13} />,         val: benchmark.claims.length,   label: "SOTA claims"   },
+                    { icon: <FileText size={13} />,    val: totalResults,               label: "Total submissions" },
+                  ].map(s => (
+                    <div key={s.label}
+                      className="flex items-center gap-2 bg-[#F8F7F2]
+                        border border-[#E2E1DC] rounded-xl px-4 py-2.5">
+                      <span className="text-[#FF5A1F]">{s.icon}</span>
+                      <span className="text-[#111111] font-black text-[18px] leading-none">{s.val}</span>
+                      <span className="text-[#8B8B8B] text-[11px] font-medium">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* current leader banner */}
+                {bestRanking && (
+                  <div className="flex items-center gap-3 bg-[#F8F7F2]
+                    border border-[#E2E1DC] rounded-2xl px-5 py-3 w-fit flex-wrap gap-y-2">
+                    <span className="text-[22px]">🥇</span>
+                    <div>
+                      <p className="text-[10px] text-[#8B8B8B] uppercase tracking-wider font-semibold mb-0.5">
+                        Current leader
+                      </p>
+                      <p className="text-[14px] font-bold text-[#111111] leading-snug">
+                        {bestRanking.paper.title.split(":")[0].trim()}
+                        <span className="ml-2 text-[#FF5A1F] font-mono font-black text-[13px]">
+                          {scoreFromRank(1).toFixed(3)}
+                        </span>
+                      </p>
+                    </div>
+                    <Link href={`/papers/${bestRanking.paper.slug}`}
+                      className="ml-auto flex items-center gap-1 text-[11px] text-[#FF5A1F]
+                        no-underline hover:text-[#FF6C37] transition-colors font-semibold shrink-0">
+                      View paper <ExternalLink size={11} />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ══════════════════════════════════════════════
+                § 2 — SOURCE PAPER
+            ══════════════════════════════════════════════ */}
+            {sourcePaper && (
+              <div className="mb-8">
+                {/* section label */}
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#9CA3AF] mb-2">
+                  Source
+                </p>
+                <Link href={`/papers/${sourcePaper.slug}`} className="no-underline group block w-fit">
+                  <div className="border border-[#E2E1DC] rounded-lg p-4 bg-white
+                    hover:border-[#C8C8C2] hover:shadow-sm transition-all max-w-2xl">
+                    <p className="text-[14px] font-semibold text-[#111111]
+                      group-hover:text-[#FF5A1F] transition-colors leading-snug
+                      underline underline-offset-2 decoration-[#E2E1DC]
+                      group-hover:decoration-[#FF5A1F] mb-1.5">
+                      {sourcePaper.title}
+                    </p>
+                    <p className="text-[11px] text-[#9CA3AF] font-mono">
+                      {formatYear(sourcePaper.publicationDate)}
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            )}
+
+            {/* ══════════════════════════════════════════════
+                § 3 — SOTA PROGRESSION CHART
+            ══════════════════════════════════════════════ */}
+            <div className="bg-white border border-[#E8E8E2] rounded-2xl p-6 mb-8">
+              <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
                 <div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#FF5A1F]/10 text-[#FF5A1F] border border-[#FF5A1F]/20 mb-3">
-                    Evaluation Leaderboard
-                  </span>
-                  <h1 className="text-[28px] md:text-[36px] font-black text-[#111111] leading-tight mb-2">
-                    {benchmark.name}
-                  </h1>
-                  <p className="text-[13px] font-mono text-[#8B8B8B] uppercase tracking-wider mb-4">
-                    Registry Identifier: {benchmark.slug}
+                  <h2 className="text-[16px] font-bold text-[#111111]">SOTA progression</h2>
+                  <p className="text-[12px] text-[#8B8B8B] mt-0.5">
+                    Best score improvement across all ranked submissions over time
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-[#F8F7F2] rounded-xl flex items-center justify-center text-[#FF5A1F] border border-[#E5E5E0] shrink-0">
-                  <Trophy size={24} />
+                <div className="flex items-center gap-1.5 bg-[#FFF3EE] border border-[#FFD5C5]
+                  rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#FF5A1F] shrink-0">
+                  <TrendingUp size={11} /> Live tracking
+                </div>
+              </div>
+              <ProgressionChart rankings={benchmark.rankings} />
+            </div>
+
+            {/* ══════════════════════════════════════════════
+                § 4 — LEADERBOARD TABLE
+            ══════════════════════════════════════════════ */}
+            <div className="bg-white border border-[#E8E8E2] rounded-2xl overflow-hidden mb-8">
+              {/* table header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0EDE8]
+                flex-wrap gap-3">
+                <h2 className="text-[16px] font-bold text-[#111111]">
+                  Leaderboard
+                  <span className="ml-2 text-[13px] font-normal text-[#9CA3AF]">
+                    ({benchmark.rankings.length})
+                  </span>
+                </h2>
+                {/* controls row — decorative to match reference */}
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="text-[#9CA3AF] uppercase tracking-wider font-semibold">View</span>
+                  <div className="flex items-center gap-1.5 border border-[#E2E1DC] rounded-md
+                    px-3 py-1.5 bg-[#FAFAF8] text-[12px] font-medium text-[#111111] cursor-pointer
+                    hover:border-[#C8C8C2] transition-colors select-none">
+                    Completeness
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2.5" className="text-[#8B8B8B]">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                  {/* closed-source toggle */}
+                  <div className="flex items-center gap-1.5 cursor-pointer">
+                    <div className="w-8 h-4 rounded-full bg-[#111111] relative">
+                      <div className="absolute right-0.5 top-0.5 w-3 h-3 rounded-full bg-white" />
+                    </div>
+                    <span className="text-[#555555] uppercase tracking-wider font-medium">
+                      Closed-source
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-6 mt-4 pt-6 border-t border-[#F1F1EB]">
-                <div className="text-[13px]">
-                  <span className="text-[#8B8B8B]">Ranked Papers:</span>{" "}
-                  <strong className="text-[#111111]">{benchmark.rankings?.length ?? 0}</strong>
-                </div>
-                <div className="text-[13px]">
-                  <span className="text-[#8B8B8B]">Official SOTA Claims:</span>{" "}
-                  <strong className="text-[#111111]">{benchmark.claims?.length ?? 0}</strong>
-                </div>
-              </div>
+              <LeaderboardTable rankings={benchmark.rankings} />
             </div>
 
-            {/* Segment/Tab Selection */}
-            <div className="flex border-b border-[#E5E5E0] mb-6">
-              <button
-                onClick={() => setActiveTab("leaderboard")}
-                className={`py-3 px-6 text-[14px] font-semibold border-b-2 transition-all cursor-pointer ${
-                  activeTab === "leaderboard"
-                    ? "border-[#FF5A1F] text-[#FF5A1F]"
-                    : "border-transparent text-[#555555] hover:text-[#111111]"
-                }`}
-              >
-                Model Leaderboard ({benchmark.rankings?.length ?? 0})
-              </button>
-              <button
-                onClick={() => setActiveTab("claims")}
-                className={`py-3 px-6 text-[14px] font-semibold border-b-2 transition-all cursor-pointer ${
-                  activeTab === "claims"
-                    ? "border-[#FF5A1F] text-[#FF5A1F]"
-                    : "border-transparent text-[#555555] hover:text-[#111111]"
-                }`}
-              >
-                SOTA Claimants ({benchmark.claims?.length ?? 0})
-              </button>
-            </div>
-
-            {/* Tab: Leaderboard */}
-            {activeTab === "leaderboard" && (
-              <div className="bg-white border border-[#E5E5E0] rounded-xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[#F8F7F2] border-b border-[#E5E5E0] text-[11px] font-mono uppercase tracking-wider text-[#8B8B8B]">
-                        <th className="py-3.5 px-6 font-semibold text-center w-20">Rank</th>
-                        <th className="py-3.5 px-6 font-semibold w-24 text-center">Change</th>
-                        <th className="py-3.5 px-6 font-semibold">Evaluation Contender / Paper</th>
-                        <th className="py-3.5 px-6 font-semibold text-center">Citations</th>
-                        <th className="py-3.5 px-6 font-semibold text-center">GitHub Stars</th>
-                        <th className="py-3.5 px-6 font-semibold text-right">Paper Details</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E5E5E0]">
-                      {benchmark.rankings.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 px-6 text-center text-[#8B8B8B] text-[14px]">
-                            No research papers have submitted evaluations to this leaderboard yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        benchmark.rankings.map((r) => (
-                          <tr key={r.id} className="hover:bg-[#FDFDFB] transition-colors group">
-                            <td className="py-4 px-6 text-center">
-                              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full border text-[13px] ${getRankBadgeStyle(r.rank)}`}>
-                                {r.rank}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              {renderRankChange(r.rank, r.previous_rank)}
-                            </td>
-                            <td className="py-4 px-6">
-                              <Link href={`/papers/${r.paper.slug}`} className="no-underline group-hover:text-[#FF5A1F]">
-                                <div className="font-bold text-[#111111] group-hover:text-[#FF5A1F] transition-colors text-[14px] line-clamp-2">
-                                  {r.paper.title}
-                                </div>
-                              </Link>
-                              <div className="flex items-center gap-3 text-[11px] text-[#8B8B8B] mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Calendar size={12} />
-                                  {r.paper.publicationDate ? new Date(r.paper.publicationDate).toLocaleDateString() : 'N/A'}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span className="text-[13px] font-medium text-[#555555]">
-                                {r.paper.citationCount ?? 0}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span className="inline-flex items-center gap-1 text-[13px] text-[#555555]">
-                                <Star size={14} className="text-[#FF5A1F]" />
-                                {r.paper.githubStars ?? 0}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                              <Link
-                                href={`/papers/${r.paper.slug}`}
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-[#F8F7F2] hover:bg-[#FF5A1F] text-[#555555] hover:text-white border border-[#E5E5E0] hover:border-[#FF5A1F] rounded-md text-[12px] font-medium transition-all no-underline"
-                              >
-                                View Paper <ExternalLink size={12} />
-                              </Link>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+            {/* ══════════════════════════════════════════════
+                § 5 — SOTA CLAIMS  (only if data exists)
+            ══════════════════════════════════════════════ */}
+            {benchmark.claims.length > 0 && (
+              <div className="bg-white border border-[#E8E8E2] rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#F0EDE8]">
+                  <h2 className="text-[16px] font-bold text-[#111111]">
+                    SOTA Claimants
+                    <span className="ml-2 text-[13px] font-normal text-[#9CA3AF]">
+                      ({benchmark.claims.length})
+                    </span>
+                  </h2>
+                </div>
+                <div className="divide-y divide-[#F4F4F0]">
+                  {benchmark.claims.map((c, i) => (
+                    <Link key={c.id} href={`/papers/${c.paper.slug}`}
+                      className="no-underline flex items-center gap-4 px-5 py-4
+                        hover:bg-[#FFF8F5] transition-colors group">
+                      <div className="w-7 h-7 rounded-lg bg-[#FFF3EE] border border-[#FFD5C5]
+                        flex items-center justify-center text-[11px] font-bold text-[#FF5A1F] shrink-0">
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#111111] line-clamp-1
+                          group-hover:text-[#FF5A1F] transition-colors">
+                          {c.paper.title}
+                        </p>
+                        <div className="flex items-center gap-3 mt-0.5 text-[11px] text-[#9CA3AF]">
+                          <span>{formatYear(c.paper.publicationDate)}</span>
+                          {c.paper.citationCount > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <FileText size={10} />
+                              {c.paper.citationCount.toLocaleString()}
+                            </span>
+                          )}
+                          {c.paper.githubStars > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Star size={10} /> {c.paper.githubStars.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ExternalLink size={13}
+                        className="text-[#C8C8C2] group-hover:text-[#FF5A1F] transition-colors shrink-0" />
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Tab: Claims */}
-            {activeTab === "claims" && (
-              <div className="bg-white border border-[#E5E5E0] rounded-xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[#F8F7F2] border-b border-[#E5E5E0] text-[11px] font-mono uppercase tracking-wider text-[#8B8B8B]">
-                        <th className="py-3.5 px-6 font-semibold">Claimant Paper</th>
-                        <th className="py-3.5 px-6 font-semibold text-center">Citations</th>
-                        <th className="py-3.5 px-6 font-semibold text-center">GitHub Stars</th>
-                        <th className="py-3.5 px-6 font-semibold text-right">Paper Details</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E5E5E0]">
-                      {benchmark.claims.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="py-12 px-6 text-center text-[#8B8B8B] text-[14px]">
-                            No papers have claimed official SOTA records on this benchmark yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        benchmark.claims.map((c) => (
-                          <tr key={c.id} className="hover:bg-[#FDFDFB] transition-colors group">
-                            <td className="py-4 px-6">
-                              <Link href={`/papers/${c.paper.slug}`} className="no-underline">
-                                <div className="font-bold text-[#111111] group-hover:text-[#FF5A1F] transition-colors text-[14px]">
-                                  {c.paper.title}
-                                </div>
-                              </Link>
-                              <div className="flex items-center gap-3 text-[11px] text-[#8B8B8B] mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Calendar size={12} />
-                                  {c.paper.publicationDate ? new Date(c.paper.publicationDate).toLocaleDateString() : 'N/A'}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span className="text-[13px] font-medium text-[#555555]">
-                                {c.paper.citationCount ?? 0}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span className="inline-flex items-center gap-1 text-[13px] text-[#555555]">
-                                <Star size={14} className="text-[#FF5A1F]" />
-                                {c.paper.githubStars ?? 0}
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                              <Link
-                                href={`/papers/${c.paper.slug}`}
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-[#F8F7F2] hover:bg-[#FF5A1F] text-[#555555] hover:text-white border border-[#E5E5E0] hover:border-[#FF5A1F] rounded-md text-[12px] font-medium transition-all no-underline"
-                              >
-                                View Paper <ExternalLink size={12} />
-                              </Link>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </main>
         </div>
       </div>

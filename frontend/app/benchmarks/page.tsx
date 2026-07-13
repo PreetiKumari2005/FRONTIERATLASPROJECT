@@ -76,7 +76,7 @@ function BenchmarkCard({ b, meta }: { b: BenchmarkItem; meta: ReturnType<typeof 
   const cfg = STATUS_CFG[meta.status] ?? STATUS_CFG["Unmapped"];
   return (
     <Link href={`/benchmarks/${b.slug}`} className="no-underline group block">
-      <div className={`bg-[#F2F1EC] border border-[#E2E1DC] rounded-2xl p-4 h-full flex flex-col gap-3 transition-all duration-200 hover:border-[#FF5A1F]/40 hover:shadow-md hover:-translate-y-0.5 ${meta.highlight ? "border-l-2 border-l-[#FF5A1F]" : ""}`}>
+      <div className={`bg-[#F2F1EC] p-4 h-full flex flex-col gap-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}>
         {/* top row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -92,7 +92,7 @@ function BenchmarkCard({ b, meta }: { b: BenchmarkItem; meta: ReturnType<typeof 
         </div>
         {/* bottom: status + stats */}
         <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-[#F4F4EF]">
-          <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+          <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 ${cfg.bg} ${cfg.text}`}>
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
             {meta.status}
           </span>
