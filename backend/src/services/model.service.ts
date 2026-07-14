@@ -15,172 +15,48 @@ export const getModels = async (
   const routingResult = await queryRouter.routeQuery(intent, async (prisma) => {
     return prisma.model.findMany({
       take: limit,
-      skip: skip,
+      skip,
       orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
         slug: true,
         createdAt: true,
-        _count: { select: { papers: true } },
-        papers: {
+        _count: {
           select: {
-            paper: {
-              select: {
-                id: true,
-                title: true,
-                slug: true,
-                abstract: true,
-                thumbnailUrl: true,
-                publicationDate: true,
-                citationCount: true,
-                githubStars: true,
-                githubForks: true,
-                githubUrl: true,
-                authors: {
-                  select: {
-                    author: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
-                tasks: {
-                  select: {
-                    task: {
-                      select: {
-                        id: true,
-                        name: true,
-                        slug: true,
-                        color: true,
-                      },
-                    },
-                  },
-                },
-                methods: {
-                  select: {
-                    method: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
-                conferences: {
-                  select: {
-                    conference: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
-                sotaClaims: {
-                  select: {
-                    benchmark: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
+            papers: true,
           },
         },
       },
     });
   });
 
-  const allModels: any[] = [];
-  const seenIds = new Set<string>();
+  const modelsById = new Map<string, any>();
 
   for (const result of routingResult.results) {
     for (const model of result) {
-      if (!seenIds.has(model.id)) {
-        seenIds.add(model.id);
-        allModels.push(model);
+      if (!modelsById.has(model.id)) {
+        modelsById.set(model.id, model);
       } else {
-        const existing = allModels.find((m) => m.id === model.id);
+        const existing = modelsById.get(model.id);
+
         if (existing) {
           existing._count.papers += model._count.papers;
-          existing.papers.push(...model.papers);
         }
       }
     }
   }
 
-  allModels.sort((a, b) => a.name.localeCompare(b.name));
-  return allModels.slice(0, limit).map((model) => {
-    let citationCount = 0;
-    let githubStars = 0;
-    let latestPaperDate: string | null = null;
-    let latestPaperTitle: string | null = null;
-    let latestPaperSlug: string | null = null;
-
-    const taskCounts = new Map<string, { task: any; count: number }>();
-    const seenPaperIds = new Set<string>();
-    const dedupPapers = [];
-
-    for (const relation of model.papers) {
-      if (seenPaperIds.has(relation.paper.id)) continue;
-      seenPaperIds.add(relation.paper.id);
-      dedupPapers.push(relation);
-
-      citationCount += relation.paper.citationCount || 0;
-      githubStars += relation.paper.githubStars || 0;
-
-      for (const taskRelation of relation.paper.tasks) {
-        const task = taskRelation.task;
-        const existing = taskCounts.get(task.slug);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          taskCounts.set(task.slug, { task, count: 1 });
-        }
-      }
-
-      const publicationDate =
-        relation.paper.publicationDate?.toISOString() ?? null;
-      if (!publicationDate) continue;
-      if (!latestPaperDate) {
-        latestPaperDate = publicationDate;
-        latestPaperTitle = relation.paper.title;
-        latestPaperSlug = relation.paper.slug;
-        continue;
-      }
-
-      if (
-        new Date(publicationDate).getTime() >
-        new Date(latestPaperDate).getTime()
-      ) {
-        latestPaperDate = publicationDate;
-        latestPaperTitle = relation.paper.title;
-        latestPaperSlug = relation.paper.slug;
-      }
-    }
-
-    const topTasks = Array.from(taskCounts.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6)
-      .map((entry) => entry.task);
-
-    return {
+  return Array.from(modelsById.values())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, limit)
+    .map((model) => ({
       id: model.id,
       name: model.name,
       slug: model.slug,
       createdAt: model.createdAt,
-      paperCount: dedupPapers.length,
-      citationCount,
-      githubStars,
-      latestPaperDate,
-      latestPaperTitle,
-      latestPaperSlug,
-      tasks: topTasks,
-      papers: dedupPapers.map((relation) => relation.paper),
-    };
-  });
+      paperCount: model._count.papers,
+    }));
 };
 
 export const getModelBySlug = async (
@@ -200,7 +76,7 @@ export const getModelBySlug = async (
         where: { slug },
         include: {
           papers: {
-            take: 100, // Capped to prevent frontend freeze
+            take: 100,
             include: {
               paper: {
                 select: {
@@ -251,13 +127,16 @@ export const getModelBySlug = async (
 
   for (const result of routingResult.results) {
     const [model, taskPapers] = result;
+
     if (model) {
       if (!baseModel) {
         const { papers, ...rest } = model;
         baseModel = { ...rest };
       }
+
       allPapers.push(...model.papers);
     }
+
     allTaskPapers.push(...taskPapers);
   }
 
@@ -265,20 +144,23 @@ export const getModelBySlug = async (
 
   const seenPaperIds = new Set<string>();
   const dedupPapers = [];
-  for (const p of allPapers) {
-    if (!seenPaperIds.has(p.paper.id)) {
-      seenPaperIds.add(p.paper.id);
-      dedupPapers.push(p);
+
+  for (const paperRelation of allPapers) {
+    if (!seenPaperIds.has(paperRelation.paper.id)) {
+      seenPaperIds.add(paperRelation.paper.id);
+      dedupPapers.push(paperRelation);
     }
   }
 
   const seenTaskPaperIds = new Set<string>();
   const tasksBySlug = new Map<string, any>();
+
   let citationCount = 0;
   let githubStars = 0;
 
   for (const paper of allTaskPapers) {
     if (seenTaskPaperIds.has(paper.id)) continue;
+
     seenTaskPaperIds.add(paper.id);
 
     citationCount += paper.citationCount || 0;
@@ -286,6 +168,7 @@ export const getModelBySlug = async (
 
     for (const taskRelation of paper.tasks) {
       const task = taskRelation.task;
+
       if (!tasksBySlug.has(task.slug)) {
         tasksBySlug.set(task.slug, task);
       }
@@ -297,10 +180,12 @@ export const getModelBySlug = async (
       a.paper.githubStars || 0,
       a.paper.citationCount || 0,
     );
+
     const scoreB = Math.max(
       b.paper.githubStars || 0,
       b.paper.citationCount || 0,
     );
+
     return scoreB - scoreA;
   });
 
