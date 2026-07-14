@@ -346,13 +346,8 @@ Metric.displayName = "Metric";
 const PaperCard = memo(({ paper }: { paper: Paper }) => {
   const upvotesNum = parseFloat(paper.upvotes) || 0;
 
-  let displayAuthors = paper.authors;
-  if (paper.authors && !paper.authors.includes("+")) {
-    const authorList = paper.authors.split(",").map((a) => a.trim());
-    if (authorList.length > 3) {
-      displayAuthors = `${authorList.slice(0, 3).join(", ")} et al.`;
-    }
-  }
+  const visibleAuthors = paper.authors.slice(0, 3);
+  const remaining = paper.authors.length - 3;
 
   return (
     <Link href={`/papers/${paper.slug}`} className="no-underline block">
@@ -365,16 +360,37 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
         {/* RIGHT — Content */}
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Title */}
-          <h3 className="text-[15px] sm:text-[17px] xl:text-[20px] font-serif font-medium text-[#111111] leading-snug xl:leading-[1.3] mb-1.5 xl:mb-2 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-none">
+          <h3 className="text-[15px] sm:text-[17px] xl:text-[20px] font-serif font-medium text-[#111111] leading-snug xl:leading-[1.3] mb-1 xl:mb-1.5 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-none">
             {paper.title}
           </h3>
 
-          {/* Authors + date + citations */}
-          <div className="flex items-center text-[12px] sm:text-[13px] xl:text-[13.5px] text-[#666666] mb-2 xl:mb-3 min-w-0 w-full flex-wrap gap-y-1">
-            <span className="truncate max-w-[60%] sm:max-w-[70%]">{displayAuthors}</span>
-            <span className="mx-1.5 xl:mx-2">·</span>
+          {/* Authors — clickable, comma-separated */}
+          <div className="text-[12.5px] sm:text-[13px] xl:text-[13.5px] text-[#555555] mb-2 xl:mb-2.5 flex flex-wrap items-baseline gap-x-0.5">
+            {visibleAuthors.length > 0 ? (
+              visibleAuthors.map((a, i) => (
+                <span key={a.slug || i}>
+                  {i > 0 && <span className="text-[#999]">, </span>}
+                  <Link
+                    href={`/authors/${a.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:text-[#FF5A1F] transition-colors no-underline text-[#555555] hover:underline"
+                  >
+                    {a.name}
+                  </Link>
+                </span>
+              ))
+            ) : (
+              <span className="text-[#999]">Unknown Author</span>
+            )}
+            {remaining > 0 && (
+              <span className="text-[#999] ml-0.5">et al.</span>
+            )}
+          </div>
+
+          {/* Date + citations */}
+          <div className="flex items-center text-[11.5px] sm:text-[12px] xl:text-[12.5px] text-[#999999] mb-2 xl:mb-2.5 min-w-0 w-full flex-wrap gap-y-1">
             <span className="shrink-0">{paper.date}</span>
-            <span className="mx-1.5 xl:mx-2 hidden sm:inline">·</span>
+            <span className="mx-1.5 hidden sm:inline text-[#ccc]">·</span>
             <span className="shrink-0 hidden sm:inline">{paper.citations || 0} citations</span>
           </div>
 
@@ -560,7 +576,7 @@ export default function PaperList({
       if (!normalizedSearchQuery) return true;
       const haystack = [
         paper.title,
-        paper.authors,
+        paper.authors.map((a) => a.name).join(" "),
         paper.description,
         ...(paper.tags ?? []),
         ...(paper.additionalTags ?? []),

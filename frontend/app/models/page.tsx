@@ -91,9 +91,10 @@ function mapModelPaper(raw: ModelPaperRaw): Paper {
     slug: raw.slug,
     title: raw.title,
     thumbnail,
-    authors:
-      raw.authors.map(({ author }) => author.name).join(", ") ||
-      "Unknown Authors",
+    authors: raw.authors.map(({ author }) => ({
+      name: author.name,
+      slug: (author as { slug?: string }).slug ?? "",
+    })),
     date: raw.publicationDate
       ? new Date(raw.publicationDate).toLocaleDateString("en-US", {
           month: "short",
