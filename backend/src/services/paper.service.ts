@@ -59,7 +59,9 @@ const paperSelect = {
     select: {
       author: {
         select: {
+          id: true,
           name: true,
+          slug: true,
         },
       },
     },
@@ -354,13 +356,12 @@ export const getPaperBySlug = async (
 ) => {
   const paper = await queryRouter.routeQuery(
     async (prisma: PrismaClient) => {
-      return prisma.paper.findUnique({
+      const paperData = await prisma.paper.findUnique({
         where: { slug },
         select: {
           id: true,
           slug: true,
           title: true,
-          shortTitle: true,
           abstract: true,
           tlDr: true,
           publicationDate: true,
@@ -379,15 +380,13 @@ export const getPaperBySlug = async (
           status: true,
           language: true,
           license: true,
-          createdAt: true,
           updatedAt: true,
           githubForks: true,
           githubStars: true,
           githubUrl: true,
           isOfficialCode: true,
-          hfUpvotes: true,
-          trendingScore: true,
           discoverySource: true,
+
           authors: {
             select: {
               paper_id: true,
@@ -512,10 +511,89 @@ export const getPaperBySlug = async (
           },
         },
       });
+
+      if (!paperData) return null;
+
+      const [authors, models, datasets, tasks, methods, conferences, rankings, sotaClaims] =
+        await Promise.all([
+          prisma.paperAuthor
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { author: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.author)),
+          prisma.paperModel
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { model: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.model)),
+          prisma.paperDataset
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { dataset: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.dataset)),
+          prisma.paperTask
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { task: { select: { id: true, name: true, slug: true, color: true } } },
+            })
+            .then((rows) => rows.map((r) => r.task)),
+          prisma.paperMethod
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { method: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.method)),
+          prisma.paperConference
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { conference: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.conference)),
+          prisma.ranking
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: {
+                id: true,
+                rank: true,
+                previous_rank: true,
+                benchmark: { select: { id: true, name: true, slug: true } },
+              },
+            })
+            .then((rows) =>
+              rows.map((r) => ({ id: r.id, rank: r.rank, previous_rank: r.previous_rank, benchmark: r.benchmark })),
+            ),
+          prisma.sotaClaim
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: {
+                id: true,
+                benchmark: { select: { id: true, name: true, slug: true } },
+              },
+            })
+            .then((rows) => rows.map((r) => ({ id: r.id, benchmark: r.benchmark }))),
+        ]);
+
+      const thumbnailUrl = paperData.thumbnailUrl === "FAILED_404" ? null : paperData.thumbnailUrl;
+
+      return {
+        ...paperData,
+        thumbnailUrl,
+        authors,
+        models,
+        datasets,
+        tasks,
+        methods,
+        conferences,
+        rankings,
+        sotaClaims,
+      };
     },
   );
 
-  return paper ? exposeThumbnailUrl(paper) : null;
+  return paper;
 };
 
 export const getPaperById = async (

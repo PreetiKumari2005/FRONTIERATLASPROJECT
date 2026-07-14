@@ -9,7 +9,7 @@ import {
   memo,
   Profiler,
 } from "react";
-import { Github, MessageCircle, Star, ArrowUpRight } from "lucide-react";
+import { Github, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import {
   getPapers,
@@ -17,6 +17,7 @@ import {
   type GetPapersResult,
   type Paper,
 } from "@/lib/paperApi";
+import { prefetchPaperBySlug } from "@/lib/papers";
 import Image from "next/image";
 
 // --- Performance Logger ---
@@ -271,12 +272,13 @@ const PaperThumbnail = memo(
     const [hasError, setHasError] = useState(false);
 
     return (
-      <div className="w-full xl:w-[160px] h-[180px] sm:h-[226px] xl:h-full shrink-0 border border-[#E5E5E0] bg-white rounded-md xl:rounded-none overflow-hidden shadow-sm relative flex items-center justify-center">
+      <div className="w-full xl:w-[160px] h-[100px] sm:h-[125px] xl:h-[180px] shrink-0 border border-[#E5E5E0] bg-white rounded-none overflow-hidden shadow-sm relative flex items-center justify-center">
         {isValidImageSrc(thumbnail) && !hasError ? (
           <Image
             src={thumbnail}
             alt={title || "Paper thumbnail"}
             fill
+            unoptimized
             className="object-contain"
             sizes="(max-width: 1280px) 100vw, 220px"
             onError={() => setHasError(true)}
@@ -344,40 +346,56 @@ Metric.displayName = "Metric";
 const PaperCard = memo(({ paper }: { paper: Paper }) => {
   const upvotesNum = parseFloat(paper.upvotes) || 0;
 
-  let displayAuthors = paper.authors;
-  if (paper.authors && !paper.authors.includes("+")) {
-    const authorList = paper.authors.split(",").map((a) => a.trim());
-    if (authorList.length > 3) {
-      displayAuthors = `${authorList.slice(0, 3).join(", ")} et al.`;
-    }
-  }
+  const visibleAuthors = paper.authors.slice(0, 3);
+  const remaining = paper.authors.length - 3;
 
   return (
     <Link href={`/papers/${paper.slug}`} className="no-underline block">
-      <div className="group flex flex-col xl:flex-row gap-5 p-4 xl:py-5 bg-white xl:bg-transparent border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] rounded-xl xl:rounded-none cursor-pointer hover:shadow-lg xl:hover:bg-white xl:hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ease-out hover:-translate-y-1 relative hover:z-10 active:scale-[0.99]">
+      <div className="group flex flex-row gap-3 sm:gap-4 xl:gap-5 p-3 sm:p-4 xl:py-5 bg-white xl:bg-transparent border xl:border-x-0 xl:border-t-0 border-[#E5E5E0] rounded-none cursor-pointer hover:shadow-lg xl:hover:bg-white xl:hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 ease-out hover:-translate-y-1 relative hover:z-10 active:scale-[0.99]">
         {/* LEFT — PDF thumbnail */}
-        <div className="shrink-0 w-full xl:w-auto self-stretch">
+        <div className="shrink-0 w-[72px] sm:w-[90px] xl:w-auto self-start xl:self-stretch">
           <PaperThumbnail title={paper.title} thumbnail={paper.thumbnail} />
         </div>
 
         {/* RIGHT — Content */}
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Title */}
-          <h3 className="text-[18px] xl:text-[20px] font-serif font-medium text-[#111111] leading-[1.3] mb-2 group-hover:text-[#F55036] transition-colors">
+          <h3 className="text-[15px] sm:text-[17px] xl:text-[20px] font-serif font-medium text-[#111111] leading-snug xl:leading-[1.3] mb-1 xl:mb-1.5 group-hover:text-[#F55036] transition-colors line-clamp-3 xl:line-clamp-none">
             {paper.title}
           </h3>
 
-          {/* Authors + date + citations */}
-          <div className="flex items-center text-[13.5px] text-[#666666] mb-3 min-w-0 w-full flex-wrap gap-y-1">
-            <span className="truncate max-w-[60%]">{displayAuthors}</span>
-            <span className="mx-2">·</span>
+          {/* Authors — clickable, comma-separated */}
+          <div className="text-[12.5px] sm:text-[13px] xl:text-[13.5px] text-[#555555] mb-2 xl:mb-2.5 flex flex-wrap items-baseline gap-x-0.5">
+            {visibleAuthors.length > 0 ? (
+              visibleAuthors.map((a, i) => (
+                <span key={a.slug || i}>
+                  {i > 0 && <span className="text-[#999]">, </span>}
+                  <Link
+                    href={`/authors/${a.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hover:text-[#FF5A1F] transition-colors no-underline text-[#555555] hover:underline"
+                  >
+                    {a.name}
+                  </Link>
+                </span>
+              ))
+            ) : (
+              <span className="text-[#999]">Unknown Author</span>
+            )}
+            {remaining > 0 && (
+              <span className="text-[#999] ml-0.5">et al.</span>
+            )}
+          </div>
+
+          {/* Date + citations */}
+          <div className="flex items-center text-[11.5px] sm:text-[12px] xl:text-[12.5px] text-[#999999] mb-2 xl:mb-2.5 min-w-0 w-full flex-wrap gap-y-1">
             <span className="shrink-0">{paper.date}</span>
-            <span className="mx-2">·</span>
-            <span className="shrink-0">{paper.citations || 0} citations</span>
+            <span className="mx-1.5 hidden sm:inline text-[#ccc]">·</span>
+            <span className="shrink-0 hidden sm:inline">{paper.citations || 0} citations</span>
           </div>
 
           {/* Description */}
-          <p className="text-[13.5px] font-normal text-[#444444] leading-[1.5] mb-3 line-clamp-3">
+          <p className="text-[13px] sm:text-[13.5px] xl:text-[14px] text-[#444444] leading-[1.6] mb-3 line-clamp-2 xl:line-clamp-3 hidden sm:block">
             {paper.description}
           </p>
 
@@ -402,17 +420,17 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-row flex-wrap items-center w-full mt-auto pt-3 gap-3">
+          <div className="flex flex-row items-center w-full mt-auto pt-3 gap-1.5 sm:gap-3">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 window.open((paper as any).arxivUrl || "https://arxiv.org", "_blank");
               }}
-              className="flex items-center justify-between px-3 sm:px-3.5 h-[34px] bg-[#FFF8F4] text-[#E0663B] border border-[#FDE3D6] rounded-[6px] hover:bg-[#FDE3D6]/50 transition-colors w-[130px] sm:w-[155px] xl:w-[165px]"
+              className="flex-1 flex items-center justify-center sm:justify-between px-2 sm:px-3.5 h-[32px] sm:h-[34px] bg-[#FFF8F4] text-[#E0663B] border border-[#FDE3D6] rounded-[6px] hover:bg-[#FDE3D6]/50 transition-colors"
             >
-              <span className="font-medium text-[13px]">arXiv</span>
-              <ArrowUpRight size={15} strokeWidth={1.5} />
+              <span className="font-medium text-[11px] sm:text-[13px]">arXiv</span>
+              <ArrowUpRight size={14} strokeWidth={1.5} className="hidden sm:block" />
             </button>
             
             <button
@@ -421,10 +439,10 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
                 e.stopPropagation();
                 window.open((paper as any).pdfUrl || "https://arxiv.org/pdf", "_blank");
               }}
-              className="flex items-center justify-between px-3 sm:px-3.5 h-[34px] bg-[#FFF4F6] text-[#E54D59] border border-[#FDD4DC] rounded-[6px] hover:bg-[#FDD4DC]/50 transition-colors w-[130px] sm:w-[155px] xl:w-[165px]"
+              className="flex-1 flex items-center justify-center sm:justify-between px-2 sm:px-3.5 h-[32px] sm:h-[34px] bg-[#FFF4F6] text-[#E54D59] border border-[#FDD4DC] rounded-[6px] hover:bg-[#FDD4DC]/50 transition-colors"
             >
-              <span className="font-medium text-[13px]">PDF</span>
-              <ArrowUpRight size={15} strokeWidth={1.5} />
+              <span className="font-medium text-[11px] sm:text-[13px]">PDF</span>
+              <ArrowUpRight size={14} strokeWidth={1.5} className="hidden sm:block" />
             </button>
 
             <button
@@ -433,14 +451,14 @@ const PaperCard = memo(({ paper }: { paper: Paper }) => {
                 e.stopPropagation();
                 window.open(paper.githubUrl || "https://github.com", "_blank");
               }}
-              className="flex items-center justify-between px-3 sm:px-3.5 h-[34px] bg-[#F7F8F9] text-[#111111] border border-[#E5E7EB] rounded-[6px] hover:bg-[#E5E7EB]/70 transition-colors w-[130px] sm:w-[155px] xl:w-[165px]"
+              className="flex-1 flex items-center justify-center sm:justify-between px-2 sm:px-3.5 h-[32px] sm:h-[34px] bg-[#F7F8F9] text-[#111111] border border-[#E5E7EB] rounded-[6px] hover:bg-[#E5E7EB]/70 transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <Github size={15} strokeWidth={1.5} />
-                <span className="font-medium text-[13px]">GitHub</span>
-                {upvotesNum > 0 && <span className="text-[#9CA3AF] text-[12.5px] font-normal">{upvotesNum}k</span>}
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Github size={13} strokeWidth={1.5} className="hidden sm:block" />
+                <span className="font-medium text-[11px] sm:text-[13px]">GitHub</span>
+                {upvotesNum > 0 && <span className="hidden sm:inline text-[#9CA3AF] text-[12.5px] font-normal">{upvotesNum}k</span>}
               </div>
-              <ArrowUpRight size={15} strokeWidth={1.5} className="text-[#9CA3AF]" />
+              <ArrowUpRight size={14} strokeWidth={1.5} className="text-[#9CA3AF] hidden sm:block" />
             </button>
           </div>
         </div>
@@ -525,12 +543,40 @@ export default function PaperList({
     initialPapers?.hasMore ? initialPapers.page + 1 : 0,
   );
 
+  // Paper detail prefetching via IntersectionObserver
+  const prefetchedRef = useRef(new Set<string>());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const slug = (entry.target as HTMLElement).getAttribute("data-paper-slug");
+            if (slug && !prefetchedRef.current.has(slug)) {
+              prefetchedRef.current.add(slug);
+              prefetchPaperBySlug(slug);
+            }
+          }
+        }
+      },
+      { rootMargin: "100px" }
+    );
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  const observeCard = useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      observerRef.current?.observe(el);
+    }
+  }, []);
+
   const matchesSearch = useCallback(
     (paper: Paper) => {
       if (!normalizedSearchQuery) return true;
       const haystack = [
         paper.title,
-        paper.authors,
+        paper.authors.map((a) => a.name).join(" "),
         paper.description,
         ...(paper.tags ?? []),
         ...(paper.additionalTags ?? []),
@@ -750,7 +796,9 @@ export default function PaperList({
         data-page={page}
       >
         {papers.map((paper) => (
-          <PaperCard key={paper.slug} paper={paper} />
+          <div key={paper.slug} ref={observeCard} data-paper-slug={paper.slug}>
+            <PaperCard paper={paper} />
+          </div>
         ))}
 
         {/* Initial load: show skeleton cards instead of spinner */}

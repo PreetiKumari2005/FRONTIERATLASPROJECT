@@ -1,4 +1,5 @@
 import { fetchApi } from './api';
+import { MOCK_BENCHMARKS, getMockBenchmarkDetail } from './mockBenchmarks';
 
 export interface BenchmarkItem {
   id: string;
@@ -60,8 +61,8 @@ export async function getBenchmarks(): Promise<BenchmarkItem[]> {
     const response = await fetchApi<GetBenchmarksResponse>('/api/v1/benchmarks?limit=100');
     return Array.isArray(response?.data) ? response.data : [];
   } catch (error) {
-    console.error("Failed to fetch benchmarks:", error);
-    return [];
+    console.warn('[benchmarks] API unavailable, using mock data:', (error as Error).message);
+    return MOCK_BENCHMARKS;
   }
 }
 
@@ -70,7 +71,7 @@ export async function getBenchmarkBySlug(slug: string): Promise<BenchmarkDetail 
     const response = await fetchApi<GetBenchmarkBySlugResponse>(`/api/v1/benchmarks/${encodeURIComponent(slug)}`);
     return response.data || null;
   } catch (error) {
-    console.error(`Failed to fetch benchmark by slug (${slug}):`, error);
-    return null;
+    console.warn(`[benchmarks] API unavailable for slug "${slug}", using mock data:`, (error as Error).message);
+    return getMockBenchmarkDetail(slug);
   }
 }

@@ -6,18 +6,16 @@ import {
   Copy,
   Check,
   ArrowLeft,
-  Globe,
   FileText,
-  Sparkles,
   Github,
-  Trophy,
   ChevronDown,
-  ChevronUp,
   Calendar,
   BookOpen,
   Quote,
   Star,
   GitBranch,
+  MessageSquare,
+  Bookmark,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -25,6 +23,15 @@ import { useState, useCallback, useEffect, type ReactNode } from "react";
 import type { PaperDetail as PaperDetailType, PaperRanking, PaperSotaClaim } from "@/lib/papers";
 import { getPapers, type Paper } from "@/lib/paperApi";
 import { atlasUiFont } from "@/lib/fonts";
+
+
+function ArxivIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3.8423 0a1.0037 1.0037 0 0 0-.922.6078c-.1536.3687-.0438.6275.2938 1.1113l6.9185 8.3597-1.0223 1.1058a1.0393 1.0393 0 0 0 .003 1.4229l1.2292 1.3135-5.4391 6.4444c-.2803.299-.4538.823-.2971 1.1986a1.0253 1.0253 0 0 0 .9585.635.9133.9133 0 0 0 .6891-.3405l5.783-6.126 7.4902 8.0051a.8527.8527 0 0 0 .6835.2597.9575.9575 0 0 0 .8777-.6138c.1577-.377-.017-.7502-.306-1.1407l-7.0518-8.3418 1.0632-1.13a.9626.9626 0 0 0 .0089-1.3165L4.6336.4639s-.3733-.4535-.768-.463zm0 .272h.0166c.2179.0052.4874.2715.5644.3639l.005.006.0052.0055 10.169 10.9905a.6915.6915 0 0 1-.0072.945l-1.0666 1.133-1.4982-1.7724-8.5994-10.39c-.3286-.472-.352-.6183-.2592-.841a.7307.7307 0 0 1 .6704-.4401Zm14.341 1.5701a.877.877 0 0 0-.6554.2418l-5.6962 6.1584 1.6944 1.8319 5.3089-6.5138c.3251-.4335.479-.6603.3247-1.0292a1.1205 1.1205 0 0 0-.9763-.689zm-7.6557 12.2823 1.3186 1.4135-5.7864 6.1295a.6494.6494 0 0 1-.4959.26.7516.7516 0 0 1-.706-.4669c-.1119-.2682.0359-.6864.2442-.9083l.0051-.0055.0047-.0055z" />
+    </svg>
+  );
+}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -70,8 +77,29 @@ function formatCompactNumber(n: number): string {
   return n.toString();
 }
 
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  if (diffMs < 0) return "just now";
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+  if (years > 0) return `${years}y ago`;
+  if (months > 0) return `${months}mo ago`;
+  if (weeks > 0) return `${weeks}w ago`;
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return "just now";
+}
+
 type CitationFormat = "bibtex" | "apa" | "mla" | "chicago";
-type ChipVariant = "tasks" | "methods" | "models" | "datasets";
 
 const CITATION_FORMATS: { key: CitationFormat; label: string }[] = [
   { key: "bibtex", label: "BibTeX" },
@@ -92,7 +120,6 @@ function parseGitHubRepo(url: string | null): string | null {
   }
   return null;
 }
-
 
 function generateCitation(paper: PaperDetailType, format: CitationFormat): string {
   const year = getCitationYear(paper.publicationDate);
@@ -125,55 +152,6 @@ function generateCitation(paper: PaperDetailType, format: CitationFormat): strin
     case "chicago":
       return `${authorStr}. ${year}. "${title}." ${source}.${doi ? ` https://doi.org/${paper.doi}.` : ""}`;
   }
-}
-
-function Section({
-  title,
-  meta,
-  children,
-}: {
-  title: string;
-  meta?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section className="border-t border-[#ECE7DD] pt-5 first:border-t-0 first:pt-0">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-bold tracking-tight text-[#111111]">{title}</h2>
-        {meta ? <div className="text-[11px] text-[#8B8B8B]">{meta}</div> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function SidebarCard({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-[#E5E5E0] bg-white shadow-[0_1px_3px_rgba(17,17,17,0.04)] transition-shadow duration-200 hover:shadow-[0_4px_18px_rgba(17,17,17,0.07)]">
-      <div className="flex items-center gap-2.5 border-b border-[#EFECE6] bg-[#FBFBF9] px-5 py-3.5">
-        {icon ? <span className="shrink-0 text-[#8B8B8B]">{icon}</span> : null}
-        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#555555]">{title}</h3>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
-}
-
-function MetadataRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#F2EEE6] py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8B8B8B]">{label}</span>
-      <div className="min-w-0 text-right text-[13px] font-medium leading-snug text-[#111111] break-words">{value}</div>
-    </div>
-  );
 }
 
 function CitationPreview({ text, format }: { text: string; format: CitationFormat }) {
@@ -229,82 +207,78 @@ function CitationPreview({ text, format }: { text: string; format: CitationForma
 
 function RepositoryPanel({ paper }: { paper: PaperDetailType }) {
   const repoName = parseGitHubRepo(paper.githubUrl);
-  const hasRepo = !!paper.githubUrl;
   const hasStars = paper.githubStars != null && paper.githubStars > 0;
   const hasForks = paper.githubForks != null && paper.githubForks > 0;
-
-  if (!hasRepo) {
+  if (!paper.githubUrl) {
     return (
-      <SidebarCard title="Repository" icon={<Github size={14} />}>
-        <div className="flex flex-col items-center rounded-xl border border-dashed border-[#E5E5E0] bg-[#FBFBF9] px-4 py-9 text-center">
-          <Github size={22} className="mb-2.5 text-[#DCDCD7]" strokeWidth={1.5} />
-          <p className="text-[13px] font-semibold text-[#555555]">No official repository available</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-[#8B8B8B]">
-            A linked GitHub repository has not been added for this paper.
-          </p>
+      <div>
+        <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
+          <Github size={14} className="text-[#8B8B8B]" />
+          <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#171717] m-0">Repository</h3>
         </div>
-      </SidebarCard>
+        <div className="pt-4 pb-2 flex flex-col items-center text-center">
+          <Github size={22} className="mb-2.5 text-[#DCDCD7]" strokeWidth={1.5} />
+          <p className="text-[13px] font-semibold text-[#171717]">No repository available</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <SidebarCard title="Repository" icon={<Github size={14} />}>
-      <div className="space-y-4">
-        <div className="rounded-xl border border-[#EAE6DE] bg-[#FCFBF8] p-4 transition-colors hover:border-[#E5D5C8] hover:bg-[#FFF8F5]">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate font-mono text-[14px] font-bold text-[#111111]">
-                {repoName ?? "GitHub Repository"}
-              </p>
-              {paper.isOfficialCode === true ? (
-                <span className="mt-2 inline-flex items-center rounded-full border border-[#BAE6FD] bg-[#E0F2FE] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#0369A1]">
+    <div>
+      <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
+        <Github size={14} className="text-[#8B8B8B]" />
+        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#171717] m-0">Repository</h3>
+      </div>
+      <div className="pt-4 flex flex-col gap-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex flex-col gap-1.5">
+            <p className="font-mono text-[13px] font-bold text-[#171717] m-0 truncate">
+              {repoName ?? "GitHub Repository"}
+            </p>
+            <div className="flex items-center gap-2">
+              {paper.isOfficialCode === true && (
+                <span className="inline-flex items-center rounded-full border border-[#BAE6FD] bg-[#E0F2FE] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#0369A1]">
                   Official
                 </span>
-              ) : null}
-            </div>
-            <Github size={18} className="shrink-0 text-[#111111]" />
-          </div>
-
-          {(hasStars || hasForks) && (
-            <div className="mt-4 flex flex-wrap gap-4 border-t border-[#EFECE6] pt-3.5">
-              {hasStars ? (
-                <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#444444]">
-                  <Star size={13} className="text-[#F55036]" fill="#F55036" />
+              )}
+              {hasStars && (
+                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#444444]">
+                  <Star size={12} fill="#FF5A1F" stroke="#FF5A1F" />
                   {formatCompactNumber(paper.githubStars!)}
-                  <span className="font-medium text-[#8B8B8B]">stars</span>
                 </span>
-              ) : null}
-              {hasForks ? (
-                <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#444444]">
-                  <GitBranch size={13} className="text-[#F55036]" />
+              )}
+              {hasForks && (
+                <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#444444]">
+                  <GitBranch size={12} className="text-[#FF5A1F]" />
                   {formatCompactNumber(paper.githubForks!)}
-                  <span className="font-medium text-[#8B8B8B]">forks</span>
                 </span>
-              ) : null}
+              )}
             </div>
-          )}
+          </div>
+          <Github size={18} className="shrink-0 text-[#8B8B8B]" />
         </div>
 
-        {paper.isOfficialCode != null ? (
-          <p className="text-[12px] font-medium text-[#6F665D]">
-            {paper.isOfficialCode ? "Official implementation from the authors" : "Community-maintained repository"}
-          </p>
-        ) : null}
-
-        <a
-          href={paper.githubUrl!}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#E5E5E0] bg-white px-4 py-2.5 text-[13px] font-bold text-[#111111] no-underline transition-all hover:border-[#FF5A1F]/30 hover:bg-[#FFF7F3] hover:text-[#F55036]"
-        >
-          Open Repository
-          <ExternalLink size={14} />
-        </a>
+        {paper.githubUrl && (
+          <>
+            <p className="text-[11.5px] font-medium text-[#6F665D] m-0">
+              {paper.isOfficialCode ? "Official implementation from the authors" : "Community-maintained repository"}
+            </p>
+            <a
+              href={paper.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[#E0DDD6] bg-transparent px-4 py-2.5 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)]"
+            >
+              Open Repository
+              <ExternalLink size={13} />
+            </a>
+          </>
+        )}
       </div>
-    </SidebarCard>
+    </div>
   );
 }
-
 
 function CitationPanel({
   paper,
@@ -323,9 +297,13 @@ function CitationPanel({
   const isCopied = copiedFormat === selectedFormat;
 
   return (
-    <SidebarCard title="Citation" icon={<Quote size={14} />}>
-      <div className="space-y-4">
-        <div className="flex rounded-lg border border-[#E5E5E0] bg-[#F8F7F2] p-1">
+    <div>
+      <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
+        <Quote size={14} className="text-[#8B8B8B]" />
+        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#171717] m-0">Citation</h3>
+      </div>
+      <div className="pt-4 flex flex-col gap-3.5">
+        <div className="flex rounded-lg border border-[#E0DDD6] bg-[#F6F5F0] p-[3px]">
           {CITATION_FORMATS.map((fmt) => {
             const active = selectedFormat === fmt.key;
             return (
@@ -333,10 +311,10 @@ function CitationPanel({
                 key={fmt.key}
                 type="button"
                 onClick={() => onFormatChange(fmt.key)}
-                className={`flex-1 rounded-md px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] transition-all ${
+                className={`flex-1 rounded-[5px] px-1.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.06em] transition-all ${
                   active
-                    ? "bg-white text-[#111111] shadow-sm"
-                    : "text-[#8B8B8B] hover:text-[#555555]"
+                    ? "bg-white text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                    : "bg-transparent text-[#8B8B8B] hover:text-[#555555]"
                 }`}
               >
                 {fmt.label}
@@ -345,33 +323,33 @@ function CitationPanel({
           })}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-[#EAE6DE] bg-[#FCFBF8] p-4">
+        <div className="overflow-hidden rounded-xl border border-[#EDE8DF] p-3.5">
           <CitationPreview text={citationText} format={selectedFormat} />
         </div>
 
         <button
           type="button"
           onClick={() => onCopy(selectedFormat)}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-bold transition-all duration-200 ${
+          className={`w-full inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-medium transition-all ${
             isCopied
               ? "scale-[0.98] border-[#A7F3D0] bg-[#ECFDF5] text-[#047857]"
-              : "border-[#E5E5E0] bg-white text-[#111111] hover:border-[#FF5A1F]/30 hover:bg-[#FFF7F3] hover:text-[#F55036]"
+              : "border-[#E0DDD6] bg-transparent text-[#444444] hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)]"
           }`}
         >
           {isCopied ? (
             <>
-              <Check size={15} className="animate-[pulse_0.4s_ease-in-out_1]" />
+              <Check size={14} />
               Copied!
             </>
           ) : (
             <>
-              <Copy size={15} className="text-[#F55036]" />
+              <Copy size={14} />
               Copy citation
             </>
           )}
         </button>
       </div>
-    </SidebarCard>
+    </div>
   );
 }
 
@@ -395,11 +373,11 @@ function PaperMetadataPanel({
     rows.push({
       label: "DOI",
       value: doiUrl ? (
-        <a href={doiUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:text-[#F55036] hover:underline">
+        <a href={doiUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:underline text-[13px] font-medium">
           {paper.doi}
         </a>
       ) : (
-        paper.doi
+        <span className="text-[13px] font-medium text-[#171717]">{paper.doi}</span>
       ),
     });
   }
@@ -407,120 +385,56 @@ function PaperMetadataPanel({
     rows.push({
       label: "arXiv",
       value: arxivUrl ? (
-        <a href={arxivUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:text-[#F55036] hover:underline">
+        <a href={arxivUrl} target="_blank" rel="noopener noreferrer" className="text-[#4A7AA0] no-underline hover:underline text-[13px] font-medium">
           {paper.arxivId}
         </a>
       ) : (
-        paper.arxivId
+        <span className="text-[13px] font-medium text-[#171717]">{paper.arxivId}</span>
       ),
     });
   }
-  if (paper.license) rows.push({ label: "License", value: paper.license });
-  if (paper.discoverySource) rows.push({ label: "Source", value: paper.discoverySource });
-  if (paper.referenceCount > 0) rows.push({ label: "References", value: formatCompactNumber(paper.referenceCount) });
-  if (paper.citationCount > 0) rows.push({ label: "Citations", value: formatCompactNumber(paper.citationCount) });
-  if (categoryLabels.length > 0) rows.push({ label: "Categories", value: categoryLabels.join(", ") });
-  if (conferenceLabels.length > 0) rows.push({ label: "Conferences", value: conferenceLabels.join(", ") });
+  if (paper.license) rows.push({ label: "License", value: <span className="text-[13px] font-medium text-[#171717]">{paper.license}</span> });
+  if (paper.discoverySource) rows.push({ label: "Source", value: <span className="text-[13px] font-medium text-[#171717]">{paper.discoverySource}</span> });
+  if (paper.referenceCount > 0) rows.push({ label: "References", value: <span className="text-[13px] font-medium text-[#171717]">{formatCompactNumber(paper.referenceCount)}</span> });
+  if (paper.citationCount > 0) rows.push({ label: "Citations", value: <span className="text-[13px] font-medium text-[#171717]">{formatCompactNumber(paper.citationCount)}</span> });
+  if (categoryLabels.length > 0) rows.push({ label: "Categories", value: <span className="text-[13px] font-medium text-[#171717]">{categoryLabels.join(", ")}</span> });
+  if (conferenceLabels.length > 0) rows.push({ label: "Venue", value: <span className="text-[13px] font-medium text-[#171717]">{conferenceLabels.join(", ")}</span> });
   if (paper.submissionDate && paper.submissionDate !== paper.publicationDate) {
     rows.push({ label: "Submitted", value: formatDate(paper.submissionDate) });
   }
-  if (paper.paperType) rows.push({ label: "Type", value: paper.paperType });
-  if (paper.status) rows.push({ label: "Status", value: paper.status });
-  if (paper.language) rows.push({ label: "Language", value: paper.language });
-  if (paper.pageCount != null) rows.push({ label: "Pages", value: paper.pageCount });
+  if (paper.paperType) rows.push({ label: "Type", value: <span className="text-[13px] font-medium text-[#171717]">{paper.paperType}</span> });
+  if (paper.status) rows.push({ label: "Status", value: <span className="text-[13px] font-medium text-[#171717]">{paper.status}</span> });
+  if (paper.language) rows.push({ label: "Language", value: <span className="text-[13px] font-medium text-[#171717]">{paper.language}</span> });
+  if (paper.pageCount != null) rows.push({ label: "Pages", value: <span className="text-[13px] font-medium text-[#171717]">{paper.pageCount}</span> });
 
   if (rows.length === 0) return null;
 
   return (
-    <SidebarCard title="Paper Details" icon={<BookOpen size={14} />}>
-      <div>
-        {rows.map((row) => (
-          <MetadataRow key={row.label} label={row.label} value={row.value} />
+    <div>
+      <div className="flex items-center gap-2.5 pb-3 border-b border-[#E5E5E0]">
+        <BookOpen size={14} className="text-[#8B8B8B]" />
+        <h3 className="text-[11px] font-black uppercase tracking-[0.12em] text-[#171717] m-0">Paper Details</h3>
+      </div>
+      <div className="pt-1">
+        {rows.map((row, i) => (
+          <div
+            key={row.label}
+            className={`flex items-start justify-between gap-4 py-3 ${i < rows.length - 1 ? "border-b border-[#F2EEE6]" : ""}`}
+          >
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8B8B8B]">{row.label}</span>
+            <div className="text-right break-words max-w-[60%]">{row.value}</div>
+          </div>
         ))}
       </div>
-    </SidebarCard>
-  );
-}
-
-function InfoTile({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-2 text-[13.5px] text-[#555555]">
-      <div className="shrink-0 text-[#8B8B8B]">{icon}</div>
-      <div className="flex items-baseline gap-1.5">
-        <span className="font-bold text-[#111111]">{value}</span>
-        <span className="text-[#8B8B8B] font-medium">{label}</span>
-      </div>
-    </div>
-  );
-}
-
-function TrendingBadge() {
-  return (
-    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FF5A1F]/10 px-3 py-1 text-[12px] font-bold text-[#FF5A1F]">
-      <Sparkles size={13} className="fill-[#FF5A1F]" />
-      <span>Trending</span>
-    </div>
-  );
-}
-
-function RankingHighlight({ rank, benchmarkName }: { rank: number; benchmarkName: string }) {
-  return (
-    <div className="flex items-center gap-2 text-[14px] font-semibold text-[#111111]">
-      <span className="text-[#FF5A1F]">#{rank}</span>
-      <span className="text-[#8B8B8B] font-medium">on</span>
-      <span className="hover:text-[#FF5A1F] transition-colors cursor-pointer border-b border-transparent hover:border-[#FF5A1F]/30">{benchmarkName}</span>
     </div>
   );
 }
 
 function RankDisplay({ rank }: { rank: number }) {
-  const isTopThree = rank <= 3;
-
   return (
     <div className="flex items-center gap-1.5">
-      {rank === 1 ? <Trophy size={15} className="shrink-0 text-[#B48C52]" strokeWidth={2.25} /> : null}
-      <span
-        className={`tabular-nums tracking-tight ${
-          rank === 1
-            ? "text-[22px] font-black text-[#FF5A1F]"
-            : rank === 2
-              ? "text-[20px] font-black text-[#555555]"
-              : rank === 3
-                ? "text-[18px] font-bold text-[#6B6258]"
-                : isTopThree
-                  ? "text-[17px] font-bold text-[#111111]"
-                  : "text-[15px] font-semibold text-[#444444]"
-        }`}
-      >
-        #{rank}
-      </span>
+      <span className="tabular-nums tracking-tight font-black text-[#171717]">#{rank}</span>
     </div>
-  );
-}
-
-function RankDelta({ rank, previousRank }: { rank: number; previousRank: number | null }) {
-  if (previousRank == null || previousRank === rank) return null;
-
-  const improved = rank < previousRank;
-  const delta = Math.abs(previousRank - rank);
-
-  return (
-    <span
-      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
-        improved ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#FEF2F2] text-[#B91C1C]"
-      }`}
-    >
-      {improved ? "↑" : "↓"}
-      {delta}
-    </span>
   );
 }
 
@@ -537,200 +451,124 @@ function BenchmarksSection({
   const sortedRankings = [...rankings].sort((a, b) => a.rank - b.rank);
   const modelName = models[0]?.model.name ?? null;
   const showRankDelta = sortedRankings.some((ranking) => ranking.previous_rank != null);
+  const desktopGridClass = showRankDelta
+    ? "grid grid-cols-[80px_minmax(0,1.3fr)_minmax(160px,1fr)_84px_104px] items-center"
+    : "grid grid-cols-[80px_minmax(0,1.3fr)_minmax(160px,1fr)_104px] items-center";
+  const desktopCellClass = "px-5 py-4";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex min-w-0 flex-1 items-center gap-4">
-          BENCHMARKS
-          <div className="h-px flex-1 bg-[#E5E5E0]" />
-        </h2>
-        {sortedRankings.length > 0 ? (
-          <span className="shrink-0 text-[11px] font-bold text-[#8B8B8B]">
-            {sortedRankings.length} result{sortedRankings.length !== 1 ? "s" : ""}
-          </span>
-        ) : null}
-      </div>
+    <div className="flex flex-col gap-6">
+      <h2 className="section-label">BENCHMARKS</h2>
 
-      {sortedRankings.length > 0 ? (
+      {sortedRankings.length > 0 || sotaClaims.length > 0 ? (
         <>
-          <div className="hidden overflow-hidden rounded-xl border border-[#E5E5E0] bg-white shadow-[0_1px_3px_rgba(17,17,17,0.04)] md:block">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-[#EDE8DF] bg-[#FBFBF9]">
-                  <th className="w-[88px] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
-                    Rank
-                  </th>
-                  <th className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
-                    Benchmark
-                  </th>
-                  <th className="px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
-                    Model
-                  </th>
-                  {showRankDelta ? (
-                    <th className="w-[88px] px-4 py-3.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
-                      Change
-                    </th>
-                  ) : null}
-                  <th className="w-[108px] px-5 py-3.5 text-right text-[10px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]">
-                    Compare
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedRankings.map((ranking) => {
-                  const isSota = sotaBenchmarkIds.has(ranking.benchmark_id);
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <div className="w-full text-left">
+              <div className={`${desktopGridClass} border-b border-[#E5E5E0]`}>
+                <div className={`${desktopCellClass} min-w-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]`}>Rank</div>
+                <div className={`${desktopCellClass} min-w-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]`}>Benchmark</div>
+                <div className={`${desktopCellClass} min-w-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]`}>Model</div>
+                {showRankDelta && (
+                  <div className={`${desktopCellClass} min-w-0 text-[11px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]`}>Change</div>
+                )}
+                <div className={`${desktopCellClass} flex justify-end text-[11px] font-bold uppercase tracking-[0.1em] text-[#8B8B8B]`}>Compare</div>
+              </div>
 
-                  return (
-                    <tr
-                      key={ranking.id}
-                      className="group border-b border-[#F2EEE6] last:border-b-0 transition-colors hover:bg-[#FFF8F5]"
-                    >
-                      <td className="px-5 py-4 align-middle">
-                        <RankDisplay rank={ranking.rank} />
-                      </td>
-                      <td className="px-4 py-4 align-middle">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                          <span className="text-[14px] font-semibold leading-snug text-[#111111] transition-colors group-hover:text-[#4A7AA0]">
-                            {ranking.benchmark.name}
+              {sortedRankings.map((ranking) => {
+                const isSota = sotaBenchmarkIds.has(ranking.benchmark_id);
+                return (
+                  <div
+                    key={ranking.id}
+                    className={`${desktopGridClass} border-b border-[#F2EEE6] transition-colors hover:bg-[rgba(255,90,31,0.02)]`}
+                  >
+                    <div className={desktopCellClass}>
+                      <RankDisplay rank={ranking.rank} />
+                    </div>
+                    <div className={`${desktopCellClass} min-w-0`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[14px] font-semibold text-[#171717]">{ranking.benchmark.name}</span>
+                        {isSota && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
+                            SOTA
                           </span>
-                          {isSota ? (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
-                              <Trophy size={10} className="shrink-0" />
-                              SOTA
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 align-middle">
-                        <span className="text-[13px] font-medium text-[#555555]">{modelName ?? "—"}</span>
-                      </td>
-                      {showRankDelta ? (
-                        <td className="px-4 py-4 align-middle">
-                          <RankDelta rank={ranking.rank} previousRank={ranking.previous_rank} />
-                        </td>
-                      ) : null}
-                      <td className="px-5 py-4 text-right align-middle">
-                        <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#4A7AA0] opacity-70 transition-all group-hover:translate-x-0.5 group-hover:opacity-100">
-                          Compare
-                          <span aria-hidden="true">→</span>
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`${desktopCellClass} min-w-0`}>
+                      <span className="text-[14px] font-medium text-[#555555]">{modelName ?? "—"}</span>
+                    </div>
+                    {showRankDelta && (
+                      <div className={desktopCellClass}>
+                        {ranking.previous_rank != null && ranking.previous_rank !== ranking.rank && (
+                          <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-bold tabular-nums ${ranking.rank < ranking.previous_rank ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#FEF2F2] text-[#B91C1C]"}`}>
+                            {ranking.rank < ranking.previous_rank ? "↑" : "↓"}{Math.abs(ranking.previous_rank - ranking.rank)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className={`${desktopCellClass} flex justify-end`}>
+                      <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-[#4A7AA0] opacity-60 transition-opacity hover:opacity-100 cursor-default">
+                        Compare →
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="space-y-3 md:hidden">
+          {/* Mobile cards */}
+          <div className="space-y-2 md:hidden">
             {sortedRankings.map((ranking) => {
               const isSota = sotaBenchmarkIds.has(ranking.benchmark_id);
-
+              const improved = ranking.previous_rank != null && ranking.rank < ranking.previous_rank;
+              const worsened = ranking.previous_rank != null && ranking.rank > ranking.previous_rank;
               return (
-                <div
-                  key={ranking.id}
-                  className="rounded-xl border border-[#E5E5E0] bg-white p-4 transition-colors active:bg-[#FFF8F5]"
-                >
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <RankDisplay rank={ranking.rank} />
-                    {isSota ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
-                        <Trophy size={10} className="shrink-0" />
+                <div key={ranking.id} className="py-3 border-b border-[#EDE8DF]">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[18px] font-black text-[#FF5A1F]">#{ranking.rank}</span>
+                    </div>
+                    {isSota && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-[#F0DECF] bg-[#FFF9F4] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-[#B48C52]">
                         SOTA
                       </span>
-                    ) : null}
+                    )}
                   </div>
-                  <p className="text-[15px] font-semibold leading-snug text-[#111111]">{ranking.benchmark.name}</p>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#F2EEE6] pt-3">
-                    <span className="text-[12px] text-[#8B8B8B]">
-                      Model{" "}
-                      <span className="font-semibold text-[#444444]">{modelName ?? "—"}</span>
-                    </span>
-                    <RankDelta rank={ranking.rank} previousRank={ranking.previous_rank} />
+                  <p className="text-[14px] font-semibold text-[#171717] m-0 mb-1">{ranking.benchmark.name}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] text-[#8B8B8B]">{modelName ?? "—"}</span>
+                    {improved && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold bg-[#ECFDF5] text-[#047857]">
+                        ↑{Math.abs(ranking.previous_rank! - ranking.rank)}
+                      </span>
+                    )}
+                    {worsened && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold bg-[#FEF2F2] text-[#B91C1C]">
+                        ↓{Math.abs(ranking.previous_rank! - ranking.rank)}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         </>
-      ) : (
+      ) : sotaClaims.length > 0 ? (
         <div className="space-y-3">
           {sotaClaims.map((claim) => (
-            <div
-              key={claim.id}
-              className="flex items-center gap-3 rounded-xl border border-[#F0DECF] bg-[#FFF9F4] px-4 py-3.5"
-            >
-              <Trophy size={16} className="shrink-0 text-[#B48C52]" />
+            <div key={claim.id} className="flex items-center gap-3 rounded-xl border border-[#F0DECF] bg-[#FFF9F4] px-4 py-3.5">
+              <span className="text-[8px] font-black bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 uppercase">SOTA</span>
               <div className="min-w-0">
-                <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#B48C52]">SOTA claim</span>
-                <p className="text-[14px] font-semibold text-[#111111]">{claim.benchmark.name}</p>
+                <p className="text-[14px] font-semibold text-[#171717]">{claim.benchmark.name}</p>
               </div>
             </div>
           ))}
         </div>
+      ) : (
+        <span className="text-[13px] text-[#999] italic">Not available</span>
       )}
-    </div>
-  );
-}
-
-function TaxonomyLink({
-  href,
-  label,
-  variant,
-}: {
-  href: string;
-  label: string;
-  variant: ChipVariant;
-}) {
-  const tone = {
-    tasks: "border-[#A7F3D0] bg-[#ECFDF5] text-[#047857]",
-    methods: "border-[#D8B4FE] bg-[#F3E8FF] text-[#6B21A8]",
-    models: "border-[#E5E5E0] bg-white text-[#111111]",
-    datasets: "border-[#BAE6FD] bg-[#E0F2FE] text-[#0369A1]",
-  }[variant];
-
-  return (
-    <Link
-      href={href}
-      className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[12px] font-medium no-underline transition-opacity hover:opacity-85 ${tone}`}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-      <span>{label}</span>
-    </Link>
-  );
-}
-
-function HeroPreview({ paper, previewHref }: { paper: PaperDetailType; previewHref: string | null }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const showThumbnail = !!paper.thumbnailUrl && !imageFailed;
-
-  if (!showThumbnail && !previewHref) return null;
-
-  return (
-    <div className="relative group w-full md:w-[220px] lg:w-[260px] shrink-0">
-      <a 
-        href={previewHref || "#"} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className={`block overflow-hidden rounded-[24px] border border-[#E5E5E0] bg-white shadow-card transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl ${!previewHref ? 'pointer-events-none' : ''}`}
-      >
-        {showThumbnail ? (
-          <Image
-            src={paper.thumbnailUrl!}
-            alt={`Preview of ${paper.title}`}
-            width={300}
-            height={400}
-            unoptimized
-            className="aspect-[3/4] h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <div className="flex aspect-[3/4] items-center justify-center bg-[#FBFBF9] p-8 text-center text-[13px] font-medium text-[#8B8B8B]">
-            Open paper preview
-          </div>
-        )}
-      </a>
     </div>
   );
 }
@@ -739,102 +577,63 @@ function RelatedPaperCard({ paper }: { paper: Paper }) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const showThumbnail = !!paper.thumbnail && !thumbnailFailed;
 
-  // Format authors for compact display
   const displayAuthors = (() => {
-    if (!paper.authors) return "";
-    const list = paper.authors.split(",").map((a) => a.trim());
-    if (list.length > 2) return `${list[0]}, ${list[1]} et al.`;
-    return paper.authors;
+    if (!Array.isArray(paper.authors) || paper.authors.length === 0) return "";
+    const names = paper.authors.map((a) => a.name);
+    if (names.length > 2) return `${names.slice(0, 2).join(", ")} et al.`;
+    return names.join(", ");
   })();
 
   const hasCode = !!paper.githubUrl;
-  const visibleTasks = (paper.tags || []).slice(0, 2);
+  const hasConference = !!paper.conference && paper.conference !== "";
 
   return (
     <Link
       href={`/papers/${paper.slug || paper.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-[#E5E5E0] bg-white no-underline transition-all duration-200 hover:border-[#F2B7A7] hover:shadow-[0_4px_20px_rgba(245,80,54,0.08)] hover:-translate-y-0.5"
+      className="group flex flex-col border border-[#EDE8DF] bg-white no-underline overflow-hidden transition-all hover:border-[rgba(255,90,31,0.25)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
     >
-      {/* Thumbnail */}
-      {showThumbnail ? (
-        <div className="relative overflow-hidden border-b border-[#F0EBE3] bg-[#FAFAF8]">
+      <div className="w-full aspect-[3/2] bg-[#F3F1EC] overflow-hidden flex items-center justify-center relative">
+        {showThumbnail ? (
           <Image
             src={paper.thumbnail}
             alt={`Preview of ${paper.title}`}
-            width={300}
-            height={169}
+            width={320}
+            height={213}
             unoptimized
-            className="aspect-[16/9] h-auto w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             onError={() => setThumbnailFailed(true)}
           />
-          {/* Gradient overlay for readability */}
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/20 to-transparent" />
-        </div>
-      ) : (
-        /* Placeholder when no thumbnail */
-        <div className="flex items-center justify-center border-b border-[#F0EBE3] bg-[#F8F7F4] h-[80px]">
-          <FileText size={28} className="text-[#D5CFC7]" strokeWidth={1.2} />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex flex-1 flex-col gap-2 p-3.5">
-        {/* Indicator badges */}
-        {(hasCode || paper.conference) && (
-          <div className="flex flex-wrap items-center gap-1">
-            {paper.conference && paper.conference !== "" && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-[3px] bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[9.5px] font-bold uppercase tracking-wide">
-                {paper.conference}
-              </span>
-            )}
-            {hasCode && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-[3px] bg-[#F0FDF4] border border-[#BBF7D0] text-[#15803D] text-[9.5px] font-bold">
-                <Github size={8} />
-                Code
-              </span>
-            )}
+        ) : (
+          <div className="w-full p-5 flex flex-col gap-2">
+            <div className="h-[3px] rounded bg-black/5 w-2/5" />
+            <div className="h-[5px] rounded bg-black/6 w-full" />
+            <div className="h-[5px] rounded bg-black/6 w-4/5" />
+            <div className="h-[3px] rounded bg-black/4 w-3/5 mt-1" />
           </div>
         )}
-
-        {/* Title */}
-        <h4 className="text-[13.5px] font-semibold leading-[1.4] text-[#111111] transition-colors group-hover:text-[#F55036] line-clamp-3">
+      </div>
+      <div className="flex-1 min-w-0 p-3.5 flex flex-col gap-2">
+        <h4 className="text-[13px] font-semibold leading-[1.4] text-[#171717] m-0 line-clamp-2 transition-colors group-hover:text-[#FF5A1F]">
           {paper.title}
         </h4>
-
-        {/* Authors */}
-        {displayAuthors && (
-          <p className="text-[11.5px] leading-snug text-[#6B7280] line-clamp-1">
-            {displayAuthors}
-          </p>
-        )}
-
-        {/* Tasks */}
-        {visibleTasks.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {visibleTasks.map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center px-1.5 py-0.5 rounded-[3px] bg-[#F3E8FF] border border-[#D8B4FE] text-[#6B21A8] text-[10px] font-medium"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Footer: date + citations */}
-        <div className="mt-auto pt-2 flex items-center justify-between border-t border-[#F3F0EB]">
-          {paper.date ? (
-            <span className="text-[11px] text-[#9CA3AF]">{paper.date}</span>
-          ) : (
-            <span />
+        <p className="text-[11px] text-[#8B8B8B] m-0 truncate leading-snug">
+          {displayAuthors || "Unknown"}
+        </p>
+        <div className="flex items-center gap-1.5 flex-wrap mt-auto pt-1">
+          {hasConference && (
+            <span className="px-1.5 py-[2px] rounded-[3px] bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[9px] font-bold uppercase leading-tight">
+              {paper.conference}
+            </span>
+          )}
+          {hasCode && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-[2px] rounded-[3px] bg-[#F0FDF4] border border-[#BBF7D0] text-[#15803D] text-[9px] font-bold leading-tight">
+              Code
+            </span>
           )}
           {paper.citations > 0 && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-[#9CA3AF] font-medium">
+            <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium text-[#8B8B8B]">
               <Quote size={10} className="text-[#C0BDB8]" />
-              {paper.citations >= 1000
-                ? `${(paper.citations / 1000).toFixed(1)}k`
-                : paper.citations}
+              {formatCompactNumber(paper.citations)}
             </span>
           )}
         </div>
@@ -849,6 +648,21 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
   const [abstractExpanded, setAbstractExpanded] = useState(false);
   const [relatedPapers, setRelatedPapers] = useState<Paper[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [showAllAuthors, setShowAllAuthors] = useState(false);
+  const [copiedArxiv, setCopiedArxiv] = useState(false);
+  const [deferred, setDeferred] = useState(false);
+
+  const handleCopyArxivId = useCallback(async () => {
+    if (!paper.arxivId) return;
+    try {
+      await navigator.clipboard.writeText(paper.arxivId);
+      setCopiedArxiv(true);
+      setTimeout(() => setCopiedArxiv(false), 2000);
+    } catch {
+      // ignore
+    }
+  }, [paper.arxivId]);
 
   const arxivUrl = paper.arxivId ? `https://arxiv.org/abs/${paper.arxivId}` : null;
   const doiUrl = paper.doi ? `https://doi.org/${paper.doi}` : null;
@@ -886,16 +700,61 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
 
   useEffect(() => {
     async function loadRelated() {
-      if (paper.tasks.length === 0) {
+      const taskSlugs = [...new Set(paper.tasks.map((t) => t.task.slug))];
+      const methodSlugs = [...new Set(paper.methods.map((m) => m.method.slug))];
+      const modelSlugs = [...new Set(paper.models.map((m) => m.model.slug))];
+
+      if (taskSlugs.length === 0 && methodSlugs.length === 0 && modelSlugs.length === 0) {
         setRelatedLoading(false);
         return;
       }
 
+      const allSlugs = [...taskSlugs, ...methodSlugs, ...modelSlugs];
+      const allTypes = [
+        ...taskSlugs.map(() => "task" as const),
+        ...methodSlugs.map(() => "method" as const),
+        ...modelSlugs.map(() => "model" as const),
+      ];
+
+      const seen = new Set<string>();
+      const slugs: string[] = [];
+      const types: ("task" | "method" | "model")[] = [];
+      for (let i = 0; i < allSlugs.length && slugs.length < 5; i++) {
+        if (!seen.has(allSlugs[i])) {
+          seen.add(allSlugs[i]);
+          slugs.push(allSlugs[i]);
+          types.push(allTypes[i]);
+        }
+      }
+
       try {
-        const taskSlug = paper.tasks[0].task.slug;
-        const result = await getPapers({ page: 1, task: taskSlug });
+        const results = await Promise.all(
+          slugs.map((slug, i) =>
+            getPapers({ page: 1, [types[i]]: slug, limit: 5 })
+          )
+        );
+
+        const score = new Map<string, { paper: Paper; count: number }>();
+        const currentId = String(paper.id);
+
+        for (const result of results) {
+          for (const p of result.papers) {
+            const id = String(p.id);
+            if (id === currentId) continue;
+            const existing = score.get(id);
+            if (existing) {
+              existing.count++;
+            } else {
+              score.set(id, { paper: p, count: 1 });
+            }
+          }
+        }
+
         setRelatedPapers(
-          result.papers.filter((p) => String(p.id) !== String(paper.id)).slice(0, 4)
+          [...score.entries()]
+            .sort((a, b) => b[1].count - a[1].count)
+            .slice(0, 4)
+            .map(([, v]) => v.paper)
         );
       } catch {
         // ignore
@@ -905,100 +764,178 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
     }
 
     loadRelated();
-  }, [paper]);
+  }, [paper.id, paper.tasks, paper.methods, paper.models]);
+
+  // Defer non-critical sections until after first paint
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setDeferred(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
-    <div className={`${atlasUiFont.className} min-h-screen bg-[#F8F7F2] text-[#111111] tracking-tight selection:bg-[#FF5A1F]/20`}>
+    <div className={`${atlasUiFont.className} min-h-screen bg-[#F8F7F2] text-[#171717] tracking-tight selection:bg-[rgba(255,90,31,0.16)]`}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
           body { font-size: 12pt; color: #000; background: #fff; }
           a { color: #000 !important; text-decoration: underline !important; }
         }
+        .section-label {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: #171717;
+          margin: 0;
+        }
+        .section-label::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: #E5E5E0;
+        }
+        .hover-dim { transition: opacity 0.2s ease; }
+        .hover-dim:hover { opacity: 0.7; }
+        .table-row { transition: background 0.15s ease; }
+        .table-row:hover { background: rgba(255,90,31,0.02); }
       `}</style>
 
       <div className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 md:px-12 lg:px-16 lg:py-6">
-        {/* Breadcrumbs */}
-        <nav className="no-print mb-6 lg:mb-10 flex items-center gap-2 text-[12.5px] font-semibold text-[#8B8B8B]" aria-label="Breadcrumb">
-          <Link href="/" className="transition-colors hover:text-[#FF5A1F]">Trending</Link>
+
+        {/* Breadcrumb */}
+        <nav className="mb-5 lg:mb-6 flex items-center gap-2 text-[12.5px] font-semibold text-[#8B8B8B]" aria-label="Breadcrumb">
+          <Link href="/papers" className="transition-colors hover:text-[#FF5A1F] no-underline text-[#8B8B8B]">Papers</Link>
           <span className="text-[#DCDCD7] font-normal" aria-hidden="true">/</span>
-          <span className="text-[#555555] truncate max-w-[200px] sm:max-w-none">
-            {paper.arxivId ? `arXiv:${paper.arxivId}` : "Research"}
-          </span>
+          <span className="text-[#555555] truncate max-w-[200px] sm:max-w-none">Research</span>
         </nav>
 
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px] xl:gap-12">
-          <main className="space-y-10 lg:space-y-12 min-w-0">
-            {/* Header Section */}
-            <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex-1 space-y-6">
-                <div className="flex flex-wrap items-center gap-4">
-                  {paper.trendingScore && paper.trendingScore > 0 ? <TrendingBadge /> : null}
-                  {paper.arxivId && <span className="text-[13px] font-bold tracking-wider text-[#8B8B8B] uppercase">arXiv:{paper.arxivId}</span>}
+        {/* Grid: Main + Sidebar */}
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px] xl:gap-10">
+
+          {/* ===== MAIN CONTENT ===== */}
+          <main className="space-y-8 lg:space-y-10 min-w-0">
+
+            {/* HEADER */}
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex-1 space-y-4">
+
+                {/* Badge row */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {paper.arxivId && (
+                    <button
+                      type="button"
+                      onClick={handleCopyArxivId}
+                      className="inline-flex items-center gap-1 rounded-full border border-[#E0DDD6] bg-[#F6F5F0] px-2.5 py-1 text-[11px] font-bold text-[#171717] transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] cursor-pointer"
+                      title="Copy arXiv ID"
+                    >
+                      {copiedArxiv ? <Check size={12} /> : <Copy size={12} />}
+                    </button>
+                  )}
+                  {paper.conferences.slice(0, 2).map((c) => (
+                    <span key={c.conference_id} className="inline-flex items-center px-2.5 py-1 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[11px] font-bold uppercase tracking-wide">
+                      {c.conference.name}
+                    </span>
+                  ))}
                 </div>
 
-                <h1 className="text-[24px] font-black leading-[1.1] tracking-[-0.03em] text-[#111111] md:text-[32px] lg:text-[36px]">
+                {/* Title */}
+                <h1 className="text-[26px] font-black leading-[1.1] tracking-[-0.03em] text-[#171717] md:text-[34px] lg:text-[38px]">
                   {paper.title}
                 </h1>
 
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] leading-relaxed text-[#555555]">
-                    {paper.authors.slice(0, 8).map((pa, i) => (
-                      <span key={pa.author.id} className="inline-flex items-center">
-                        {i > 0 && <span className="mr-2 text-[#DCDCD7]">·</span>}
-                        <Link href={`/authors/${pa.author.slug}`} className="font-semibold text-[#444444] hover:text-[#FF5A1F] hover:underline decoration-2 underline-offset-4">
-                          {pa.author.name}
-                        </Link>
-                      </span>
-                    ))}
-                    {paper.authors.length > 8 && (
-                      <span className="ml-2 font-bold text-[#FF5A1F]">+{paper.authors.length - 8} more</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#E5E5E0] pt-5">
-                    {paper.publicationDate && (
-                      <InfoTile icon={<Calendar size={16} />} label="submitted" value={formatDate(paper.publicationDate)} />
-                    )}
-                    {paper.citationCount > 0 && (
-                      <InfoTile icon={<Quote size={16} />} label="citations" value={paper.citationCount} />
-                    )}
-                    {paper.conferences.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {paper.conferences.map((c) => (
-                          <span
-                            key={c.conference_id}
-                            className="inline-flex items-center px-2 py-0.5 rounded-[4px] bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] text-[11px] font-bold uppercase tracking-wide"
-                          >
-                            {c.conference.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                {/* Authors */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                  {paper.authors.slice(0, 3).map((pa, i) => (
+                    <span key={pa.author.id} className="inline-flex items-center">
+                      {i > 0 && <span className="mr-2 text-[#DCDCD7]">·</span>}
+                      <Link href={`/authors/${pa.author.slug}`} className="text-[14px] font-semibold text-[#444444] no-underline hover:text-[#FF5A1F] hover:underline decoration-2 underline-offset-4 transition-colors">
+                        {pa.author.name}
+                      </Link>
+                    </span>
+                  ))}
+                  {paper.authors.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllAuthors(!showAllAuthors)}
+                      className="ml-1 text-[13px] font-bold text-[#FF5A1F] bg-transparent border-none cursor-pointer p-0 hover:underline"
+                    >
+                      {showAllAuthors ? "Show less" : `+${paper.authors.length - 3} more`}
+                    </button>
+                  )}
+                  {showAllAuthors && paper.authors.slice(3).map((pa) => (
+                    <span key={pa.author.id} className="inline-flex items-center">
+                      <span className="mr-2 text-[#DCDCD7]">·</span>
+                      <Link href={`/authors/${pa.author.slug}`} className="text-[14px] font-semibold text-[#444444] no-underline hover:text-[#FF5A1F] hover:underline decoration-2 underline-offset-4 transition-colors">
+                        {pa.author.name}
+                      </Link>
+                    </span>
+                  ))}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 pt-4">
-                  <a 
-                    href={paper.pdfUrl || arxivUrl || "#"} 
-                    className="ds-button h-11 px-6 gap-2 text-[14px]"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="View PDF"
-                  >
-                    <FileText size={18} />
-                    View PDF
-                  </a>
-                  {arxivUrl && (
-                    <a 
-                      href={arxivUrl}
-                      className="ds-button-ghost h-11 px-6 gap-2 text-[14px] border-2"
+                {/* Stats Bar */}
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1">
+                  {paper.citationCount > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <MessageSquare size={13} className="text-[#999999]" strokeWidth={1.8} />
+                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.citationCount)}</span>
+                      <span className="text-[10px] font-bold text-[#171717]">citations</span>
+                    </div>
+                  )}
+                  {paper.githubStars != null && paper.githubStars > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Star size={13} fill="#FF5A1F" stroke="#FF5A1F" strokeWidth={1} />
+                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.githubStars)}</span>
+                      <span className="text-[10px] font-bold text-[#171717]">stars</span>
+                    </div>
+                  )}
+                  {paper.githubForks != null && paper.githubForks > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <GitBranch size={13} className="text-[#FF5A1F]" strokeWidth={1.8} />
+                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.githubForks)}</span>
+                      <span className="text-[10px] font-bold text-[#171717]">forks</span>
+                    </div>
+                  )}
+                  {paper.referenceCount > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen size={13} className="text-[#999999]" strokeWidth={1.8} />
+                      <span className="text-[13.5px] font-bold text-[#171717]">{formatCompactNumber(paper.referenceCount)}</span>
+                      <span className="text-[10px] font-bold text-[#171717]">references</span>
+                    </div>
+                  )}
+                  {paper.publicationDate && (
+                    <div className="flex items-center gap-1.5">
+                      <Calendar size={13} className="text-[#999999]" strokeWidth={1.8} />
+                      <span className="text-[13.5px] font-bold text-[#171717]">{formatRelativeTime(paper.publicationDate)}</span>
+                      <span className="text-[10px] font-bold text-[#171717]">published</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  {(paper.pdfUrl || arxivUrl) && (
+                    <a
+                      href={paper.pdfUrl || arxivUrl!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label="Open arXiv page"
+                      className="ds-button inline-flex items-center justify-center gap-2 rounded-full bg-[#FF5A1F] px-6 py-2.5 text-[14px] font-semibold text-white no-underline transition-all hover:bg-[#FF6C37] active:scale-[0.97]"
                     >
-                      <Globe size={18} />
-                      arXiv page
+                      <FileText size={18} />
+                      View PDF
+                    </a>
+                  )}
+                  {arxivUrl && (
+                    <a
+                      href={arxivUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ds-button-ghost inline-flex items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent px-5 py-2 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
+                    >
+                      <ArxivIcon size={18} />
+                      arXiv
                     </a>
                   )}
                   {paper.githubUrl && (
@@ -1006,254 +943,350 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
                       href={paper.githubUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ds-button-ghost h-11 px-6 gap-2 text-[14px] border-2"
-                      aria-label="Open code repository"
+                      className="ds-button-ghost inline-flex items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent px-5 py-2 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
                     >
-                      <Github size={18} className="text-[#111111]" />
+                      <Github size={18} />
                       Code
-                      {paper.githubStars ? (
-                        <span className="ml-1 text-[#8B8B8B] font-bold">
-                          {formatCompactNumber(paper.githubStars)}
-                        </span>
-                      ) : null}
+                      {paper.githubStars != null && paper.githubStars > 0 && (
+                        <span className="text-[#8B8B8B] font-bold">{formatCompactNumber(paper.githubStars)}</span>
+                      )}
                     </a>
                   )}
-                  <div className="flex items-center gap-2 ml-auto lg:ml-0">
-                    <button 
-                      type="button"
-                      onClick={() => handleCopyCitation("apa")}
-                      className="ds-button-ghost h-11 w-11 p-0 border-2" 
-                      title="Cite"
-                      aria-label="Copy citation"
+                  {paper.projectUrl && (
+                    <a
+                      href={paper.projectUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ds-button-ghost inline-flex items-center justify-center gap-1.5 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent px-5 py-2 text-[13px] font-medium text-[#444444] no-underline transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
                     >
-                      <Quote size={18} />
-                    </button>
+                      <ExternalLink size={18} />
+                      Project Page
+                    </a>
+                  )}
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={handleShare}
-                      className="ds-button-ghost h-11 w-11 p-0 border-2"
+                      className="ds-button-ghost !p-0 w-11 h-11 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent inline-flex items-center justify-center transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97]"
                       title="Share"
-                      aria-label="Share this paper"
                     >
                       <Share2 size={18} />
                     </button>
-                    <button type="button" className="ds-button-ghost h-11 w-11 p-0 border-2" title="Save" aria-label="Save paper">
-                      <Star size={18} />
+                    <button
+                      type="button"
+                      onClick={() => setSaved(!saved)}
+                      className={`ds-button-ghost !p-0 w-11 h-11 rounded-full border-[1.5px] border-[#E0DDD6] bg-transparent inline-flex items-center justify-center transition-all hover:bg-[rgba(255,90,31,0.06)] hover:text-[#FF5A1F] hover:border-[rgba(255,90,31,0.3)] active:scale-[0.97] ${saved ? "text-[#FF5A1F]" : ""}`}
+                      title={saved ? "Saved" : "Save"}
+                    >
+                      <Bookmark size={18} fill={saved ? "#FF5A1F" : "none"} />
                     </button>
                   </div>
                 </div>
 
                 {/* Benchmark Highlights */}
                 {paper.rankings && paper.rankings.length > 0 && (
-                  <div className="flex flex-col gap-3 pt-4 border-l-4 border-[#FF5A1F]/20 pl-6">
+                  <div className="flex flex-col gap-2 pt-3 border-l-[3px] border-[rgba(255,90,31,0.15)] pl-4">
                     {paper.rankings.slice(0, 3).map((ranking) => (
-                      <RankingHighlight key={ranking.id} rank={ranking.rank} benchmarkName={ranking.benchmark.name} />
+                      <div key={ranking.id} className="flex items-center gap-2 text-[13.5px] font-semibold text-[#171717]">
+                        <span className="text-[#FF5A1F]">#{ranking.rank}</span>
+                        <span className="text-[#8B8B8B] font-medium">on</span>
+                        <span className="hover:text-[#FF5A1F] transition-colors cursor-pointer border-b border-transparent hover:border-[rgba(255,90,31,0.3)]">{ranking.benchmark.name}</span>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="hidden lg:block">
-                <HeroPreview paper={paper} previewHref={previewHref} />
+              {/* Preview (desktop) */}
+              <div className="hidden lg:block w-[200px] lg:w-[220px] shrink-0">
+                <a
+                  href={previewHref || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`block overflow-hidden transition-all duration-300 group ${!previewHref ? 'pointer-events-none' : ''}`}
+                  style={{ textDecoration: 'none' }}
+                >
+                  <div
+                    className="relative"
+                    style={{ aspectRatio: '3/4', background: '#EFECE6', transition: 'transform 0.4s ease' }}
+                  >
+                    {paper.thumbnailUrl ? (
+                      <Image
+                        src={paper.thumbnailUrl}
+                        alt={`Preview of ${paper.title}`}
+                        width={220}
+                        height={293}
+                        unoptimized
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-400"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="preview-page flex flex-col h-full p-5 pb-3.5">
+                        <div className="h-[3px] rounded mb-3 bg-black/5 w-2/5" />
+                        <div className="h-[6px] rounded mb-1.5 bg-black/7 w-[85%]" />
+                        <div className="h-[6px] rounded mb-1.5 bg-black/7 w-[60%]" />
+                        <div className="mt-2.5 space-y-1.5">
+                          <div className="h-1 rounded bg-black/5 w-[92%]" />
+                          <div className="h-1 rounded bg-black/5 w-[78%]" />
+                          <div className="h-1 rounded bg-black/5 w-[92%]" />
+                          <div className="h-1 rounded bg-black/5 w-[60%]" />
+                        </div>
+                        <div className="mt-auto pt-2.5 flex items-center gap-1.5">
+                          <div className="w-3.5 h-3.5 rounded-full bg-black/5" />
+                          <div className="h-1 w-[60px] rounded bg-black/5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </a>
               </div>
             </div>
 
-            {/* AI Summary Section */}
+            {/* TL;DR */}
             {paper.tlDr && (
-              <div className="ds-card-hero p-8 md:p-10 border-2 border-[#FF5A1F]/10 bg-white/80 backdrop-blur-sm">
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FF5A1F] text-white shadow-lg shadow-[#FF5A1F]/30">
-                      <Sparkles size={15} fill="currentColor" />
-                    </div>
-                    <span className="text-[15px] font-black uppercase tracking-widest text-[#111111]">TL;DR</span>
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E5E0] bg-[#F8F7F2] px-3 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#8B8B8B]" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8B8B8B]">AI-GENERATED</span>
-                  </div>
+              <div style={{ borderLeft: '3px solid rgba(255,90,31,0.15)', paddingLeft: '20px' }}>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="text-[12px] font-black uppercase tracking-[0.15em] text-[#171717]">TL;DR</span>
                 </div>
-                <p className="text-[17px] font-medium leading-[1.8] text-[#222222]">
+                <p className="text-[15px] font-medium leading-[1.8] text-[#333333] m-0">
                   {paper.tlDr}
                 </p>
               </div>
             )}
 
-            <div className="space-y-16 pt-6">
+            {/* ===== MAIN CONTENT SECTIONS ===== */}
+            <div className="flex flex-col gap-8">
+
+              {/* ABSTRACT */}
               {paper.abstract && (
-                <div className="space-y-5">
-                  <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex items-center gap-4">
-                    ABSTRACT
-                    <div className="h-px flex-1 bg-[#E5E5E0]" />
-                  </h2>
+                <div className="flex flex-col gap-3">
+                  <h2 className="section-label">ABSTRACT</h2>
                   <div className="relative">
-                    <p className={`text-[16px] leading-[1.9] text-[#444444] font-medium transition-all ${abstractExpanded ? "" : "line-clamp-[8]"}`}>
+                    <p
+                      className={`text-[14.5px] leading-[1.8] text-[#484848] font-[450] m-0 ${
+                        abstractExpanded ? "" : "max-h-[130px] overflow-hidden"
+                      }`}
+                      style={{ transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                    >
                       {paper.abstract}
                     </p>
                     {!abstractExpanded && (
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#F8F7F2] via-[#F8F7F2]/70 to-transparent" />
+                      <div style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: '48px',
+                        background: 'linear-gradient(to top, #F8F7F2, transparent)',
+                        pointerEvents: 'none',
+                        transition: 'opacity 0.3s ease',
+                      }} />
                     )}
                   </div>
                   <button
                     onClick={() => setAbstractExpanded((v) => !v)}
-                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#FF5A1F] hover:text-[#FF6C37] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]/40 rounded"
+                    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#FF5A1F] hover:text-[#FF6C37] transition-colors focus-visible:outline-none bg-transparent border-none cursor-pointer p-0 w-fit"
                     aria-expanded={abstractExpanded}
-                    aria-label={abstractExpanded ? "Collapse abstract" : "Expand full abstract"}
                   >
-                    {abstractExpanded ? (
-                      <>
-                        <ChevronUp size={15} />
-                        Show less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown size={15} />
-                        Read full abstract
-                      </>
-                    )}
+                    <span id="abstract-btn-text">{abstractExpanded ? "Show less" : "Read full abstract"}</span>
+                    <ChevronDown size={15} className={`transition-transform ${abstractExpanded ? "rotate-180" : ""}`} />
                   </button>
                 </div>
               )}
 
-              {paper.tasks.length > 0 && (
-                <div className="space-y-6">
-                  <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex items-center gap-4">
-                    TASKS
-                    <div className="h-px flex-1 bg-[#E5E5E0]" />
-                  </h2>
-                  <div className="flex flex-wrap gap-3">
+              {/* RESEARCH TAXONOMY */}
+              <h2 className="section-label">RESEARCH TAXONOMY</h2>
+
+              {/* TASKS */}
+              <section className="flex flex-col gap-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">TASKS</h3>
+                {paper.tasks.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
                     {paper.tasks.map((t) => (
-                      <Link 
-                        key={t.task.id} 
+                      <Link
+                        key={t.task.id}
                         href={`/tasks/${t.task.slug}`}
-                        className="ds-chip h-10 px-5 text-[14px] font-bold hover:bg-[#FF5A1F]/20 transition-all border-[#FF5A1F]/20"
+                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#D4EDDA] bg-[#F1F9F2] px-2 py-0.5 text-[12.5px] font-medium text-[#2D6A4F] no-underline hover:opacity-80 transition-opacity"
                       >
+                        <span className="w-1 h-1 rounded-full bg-[#2D6A4F] opacity-50" />
                         {t.task.name}
                       </Link>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <span className="text-[13px] text-[#999] italic">Not available</span>
+                )}
+              </section>
 
-              {paper.methods.length > 0 && (
-                <div className="space-y-6">
-                  <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-[#8B8B8B] flex items-center gap-4">
-                    METHODS
-                    <div className="h-px flex-1 bg-[#E5E5E0]" />
-                  </h2>
-                  <div className="flex flex-wrap gap-3">
+              {/* METHODS */}
+              <section className="flex flex-col gap-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">METHODS</h3>
+                {paper.methods.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
                     {paper.methods.map((m) => (
-                      <Link 
-                        key={m.method.id} 
+                      <Link
+                        key={m.method.id}
                         href={`/methods/${m.method.slug}`}
-                        className="inline-flex h-10 items-center rounded-full border-2 border-[#E5E5E0] bg-white px-5 text-[14px] font-bold text-[#111111] transition-all hover:border-[#FF5A1F] hover:text-[#FF5A1F]"
+                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#E2D5F0] bg-[#F5F0FA] px-2 py-0.5 text-[12.5px] font-medium text-[#5B3A8C] no-underline hover:opacity-80 transition-opacity"
                       >
+                        <span className="w-1 h-1 rounded-full bg-[#5B3A8C] opacity-50" />
                         {m.method.name}
                       </Link>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <span className="text-[13px] text-[#999] italic">Not available</span>
+                )}
+              </section>
 
-              {/* Preservation of existing Phase 2+ sections (Rankings, Results, etc.) */}
-              {paper.models.length > 0 && (
-                <Section title="Models">
-                  <div className="flex flex-wrap gap-2">
-                    {paper.models.map((item) => (
-                      <TaxonomyLink
-                        key={item.model.id}
-                        href={`/models/${item.model.slug}`}
-                        label={item.model.name}
-                        variant="models"
-                      />
+              {/* MODELS */}
+              <section className="flex flex-col gap-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">MODELS</h3>
+                {paper.models.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {paper.models.map((m) => (
+                      <Link
+                        key={m.model.id}
+                        href={`/models/${m.model.slug}`}
+                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#FDE4C8] bg-[#FFF8F0] px-2 py-0.5 text-[12.5px] font-medium text-[#A45C00] no-underline hover:opacity-80 transition-opacity"
+                      >
+                        <span className="w-1 h-1 rounded-full bg-[#A45C00] opacity-50" />
+                        {m.model.name}
+                      </Link>
                     ))}
                   </div>
-                </Section>
-              )}
+                ) : (
+                  <span className="text-[13px] text-[#999] italic">Not available</span>
+                )}
+              </section>
 
-              {paper.datasets.length > 0 && (
-                <Section title="Datasets">
-                  <div className="flex flex-wrap gap-2">
-                    {paper.datasets.map((item) => (
-                      <TaxonomyLink
-                        key={item.dataset.id}
-                        href={`/datasets/${item.dataset.slug}`}
-                        label={item.dataset.name}
-                        variant="datasets"
-                      />
+              {/* DATASETS */}
+              <section className="flex flex-col gap-3">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">DATASETS</h3>
+                {paper.datasets.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {paper.datasets.map((d) => (
+                      <Link
+                        key={d.dataset.id}
+                        href={`/datasets/${d.dataset.slug}`}
+                        className="inline-flex items-center gap-1 rounded-[4px] border border-[#D0E6F2] bg-[#EDF5FA] px-2 py-0.5 text-[12.5px] font-medium text-[#2C617D] no-underline hover:opacity-80 transition-opacity"
+                      >
+                        <span className="w-1 h-1 rounded-full bg-[#2C617D] opacity-50" />
+                        {d.dataset.name}
+                      </Link>
                     ))}
                   </div>
-                </Section>
-              )}
+                ) : (
+                  <span className="text-[13px] text-[#999] italic">Not available</span>
+                )}
+              </section>
 
-              {(paper.rankings.length > 0 || paper.sotaClaims.length > 0) && (
+              {/* Benchmarks */}
+              {deferred ? (
                 <BenchmarksSection
                   rankings={paper.rankings}
                   models={paper.models}
                   sotaClaims={paper.sotaClaims}
                 />
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="h-[14px] w-32 bg-[#E4E0D8] rounded animate-pulse" />
+                  <div className="border border-[#EDE8DF] rounded-lg overflow-hidden">
+                    <div className="bg-[#EFECE6] p-3">
+                      <div className="h-3 w-36 bg-[#E4E0D8] rounded animate-pulse" />
+                    </div>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-6 p-3 border-t border-[#EDE8DF]">
+                        <div className="h-[15px] w-14 bg-[#E4E0D8] rounded animate-pulse shrink-0" />
+                        <div className="h-[15px] w-44 bg-[#E4E0D8] rounded animate-pulse" />
+                        <div className="h-[15px] w-20 bg-[#E4E0D8] rounded animate-pulse ml-auto" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
-              {(relatedLoading || relatedPapers.length > 0) && (
-                <Section
-                  title="Related Papers"
-                  meta={
-                    !relatedLoading ? (
-                      <span>{relatedPapers.length} paper{relatedPapers.length !== 1 ? "s" : ""}</span>
-                    ) : undefined
-                  }
-                >
-                  {relatedLoading ? (
-                    /* Skeleton loading state */
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex flex-col overflow-hidden rounded-xl border border-[#E5E5E0] bg-white animate-pulse"
-                        >
-                          <div className="h-[80px] bg-[#F3F0EB]" />
-                          <div className="p-3.5 space-y-2">
-                            <div className="h-3.5 bg-[#EEEBE6] rounded w-full" />
-                            <div className="h-3.5 bg-[#EEEBE6] rounded w-5/6" />
-                            <div className="h-3 bg-[#F3F0EB] rounded w-1/2 mt-1" />
-                          </div>
+              {/* RELATED PAPERS */}
+              <section className="border-t border-[#ECE7DD] pt-6">
+                <h2 className="section-label mb-3.5">RELATED PAPERS</h2>
+                {relatedLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="flex flex-col border border-[#EDE8DF] bg-white overflow-hidden animate-pulse">
+                        <div className="w-full aspect-[3/2] bg-[#EFECE6]" />
+                        <div className="p-3.5 space-y-2">
+                          <div className="h-3 bg-[#E8E5DD] rounded w-full" />
+                          <div className="h-3 bg-[#E8E5DD] rounded w-3/4" />
+                          <div className="h-2.5 bg-[#E8E5DD] rounded w-1/2" />
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      {relatedPapers.map((relatedPaper) => (
-                        <RelatedPaperCard key={relatedPaper.slug || relatedPaper.id} paper={relatedPaper} />
-                      ))}
-                    </div>
-                  )}
-                </Section>
-              )}
+                      </div>
+                    ))}
+                  </div>
+                ) : relatedPapers.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    {relatedPapers.map((relatedPaper) => (
+                      <RelatedPaperCard key={relatedPaper.slug || relatedPaper.id} paper={relatedPaper} />
+                    ))}
+                  </div>
+                ) : !relatedLoading ? (
+                  <span className="text-[13px] text-[#999] italic">Not available</span>
+                ) : null}
+              </section>
             </div>
 
-            <div className="no-print mt-5 border-t border-[#E5E5E0] pt-4">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 text-[13px] font-medium text-[#555555] no-underline hover:text-[#FF5A1F] transition-colors"
-                aria-label="Back to papers list"
-              >
-                <ArrowLeft size={14} />
-                Back to papers
-              </Link>
-            </div>
+            {/* Back link */}
+            <Link
+              href="/papers"
+              className="hover-dim inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#8B8B8B] no-underline border-t border-[#E5E5E0] pt-3.5 transition-colors hover:text-[#FF5A1F]"
+            >
+              <ArrowLeft size={13} />
+              Back to papers
+            </Link>
           </main>
 
-          <aside className="no-print space-y-4 xl:self-start xl:sticky xl:top-6" aria-label="Paper details sidebar">
-            <RepositoryPanel paper={paper} />
-            <CitationPanel
-              paper={paper}
-              selectedFormat={selectedCitationFormat}
-              onFormatChange={setSelectedCitationFormat}
-              onCopy={handleCopyCitation}
-              copiedFormat={citationCopied}
-            />
-            <PaperMetadataPanel paper={paper} arxivUrl={arxivUrl} doiUrl={doiUrl} />
-          </aside>
+          {/* ===== SIDEBAR ===== */}
+          {deferred ? (
+            <aside className="space-y-5 xl:sticky xl:top-6 self-start">
+              <RepositoryPanel paper={paper} />
+              <CitationPanel
+                paper={paper}
+                selectedFormat={selectedCitationFormat}
+                onFormatChange={setSelectedCitationFormat}
+                onCopy={handleCopyCitation}
+                copiedFormat={citationCopied}
+              />
+              <PaperMetadataPanel paper={paper} arxivUrl={arxivUrl} doiUrl={doiUrl} />
+            </aside>
+          ) : (
+            <aside className="space-y-5 xl:sticky xl:top-6 self-start">
+              <div className="border border-[#EDE8DF] rounded-lg bg-white p-4 space-y-3">
+                <div className="h-[14px] w-28 bg-[#E4E0D8] rounded animate-pulse" />
+                <div className="space-y-1.5">
+                  <div className="h-3 bg-[#E4E0D8] rounded w-full animate-pulse" />
+                  <div className="h-3 bg-[#E4E0D8] rounded w-[65%] animate-pulse" />
+                </div>
+                <div className="h-10 w-full bg-[#E4E0D8] rounded-lg animate-pulse" />
+                <div className="h-3 bg-[#E4E0D8] rounded w-[55%] animate-pulse" />
+              </div>
+              <div className="border border-[#EDE8DF] rounded-lg bg-white p-4 space-y-3">
+                <div className="h-[14px] w-20 bg-[#E4E0D8] rounded animate-pulse" />
+                <div className="h-8 w-full bg-[#E4E0D8] rounded-lg animate-pulse" />
+                <div className="h-8 w-full bg-[#E4E0D8] rounded-lg animate-pulse" />
+                <div className="h-3 w-1/2 bg-[#E4E0D8] rounded animate-pulse" />
+              </div>
+              <div className="border border-[#EDE8DF] rounded-lg bg-white divide-y divide-[#EDE8DF]">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3">
+                    <div className="h-3 w-16 bg-[#E4E0D8] rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-[#E4E0D8] rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </aside>
+          )}
         </div>
       </div>
     </div>
