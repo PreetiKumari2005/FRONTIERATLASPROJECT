@@ -98,7 +98,7 @@ export const getModelBySlug = async (
         },
       }),
       prisma.paper.findMany({
-        take: 500,
+        take: 200,
         where: {
           models: {
             some: {
@@ -159,19 +159,52 @@ export const getModelBySlug = async (
           },
         },
       }),
+      prisma.model.findMany({
+        take: 6,
+        where: {
+          slug: {
+            not: slug,
+          },
+          papers: {
+            some: {
+              paper: {
+                models: {
+                  some: {
+                    model: { slug },
+                  },
+                },
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          _count: {
+            select: {
+              papers: true,
+            },
+          },
+        },
+      }),
     ]);
   });
 
   let baseModel: any = null;
   let paperCount = 0;
+
   const allPapers: any[] = [];
   const allModelPapers: any[] = [];
 
+  const relatedModelsById = new Map<string, any>();
+
   for (const result of routingResult.results) {
-    const [model, modelPapers] = result;
+    const [model, modelPapers, relatedModels] = result;
 
     if (model) {
       paperCount += model._count.papers;
+
       if (!baseModel) {
         const { papers, ...rest } = model;
         baseModel = { ...rest };
@@ -181,6 +214,12 @@ export const getModelBySlug = async (
     }
 
     allModelPapers.push(...modelPapers);
+
+    for (const relatedModel of relatedModels) {
+      if (!relatedModelsById.has(relatedModel.id)) {
+        relatedModelsById.set(relatedModel.id, relatedModel);
+      }
+    }
   }
 
   if (!baseModel) return null;
@@ -196,6 +235,7 @@ export const getModelBySlug = async (
   }
 
   const seenModelPaperIds = new Set<string>();
+
   const tasksBySlug = new Map<string, any>();
   const methodsBySlug = new Map<string, any>();
   const datasetsBySlug = new Map<string, any>();
@@ -275,5 +315,11 @@ export const getModelBySlug = async (
     methods: Array.from(methodsBySlug.values()),
     datasets: Array.from(datasetsBySlug.values()),
     benchmarks: Array.from(benchmarksBySlug.values()),
+    relatedModels: Array.from(relatedModelsById.values()).map((model) => ({
+      id: model.id,
+      name: model.name,
+      slug: model.slug,
+      paperCount: model._count.papers,
+    })),
   };
 };
