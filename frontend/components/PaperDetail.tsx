@@ -123,7 +123,7 @@ function parseGitHubRepo(url: string | null): string | null {
 
 function generateCitation(paper: PaperDetailType, format: CitationFormat): string {
   const year = getCitationYear(paper.publicationDate);
-  const authors = paper.authors.map((pa) => pa.author.name);
+  const authors = (paper.authors || []).map((pa) => pa.author.name);
   const authorStr = authors.length > 0 ? authors.join(", ") : "Unknown Author";
   const title = paper.title;
   const doi = paper.doi ? `https://doi.org/${paper.doi}` : null;
@@ -362,8 +362,8 @@ function PaperMetadataPanel({
   arxivUrl: string | null;
   doiUrl: string | null;
 }) {
-  const categoryLabels = paper.tasks.map((t) => t.task.name);
-  const conferenceLabels = paper.conferences.map((c) => c.conference.name);
+  const categoryLabels = (paper.tasks || []).map((t) => t.task.name);
+  const conferenceLabels = (paper.conferences || []).map((c) => c.conference.name);
 
   const rows: { label: string; value: ReactNode }[] = [];
 
@@ -700,9 +700,9 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
 
   useEffect(() => {
     async function loadRelated() {
-      const taskSlugs = [...new Set(paper.tasks.map((t) => t.task.slug))];
-      const methodSlugs = [...new Set(paper.methods.map((m) => m.method.slug))];
-      const modelSlugs = [...new Set(paper.models.map((m) => m.model.slug))];
+      const taskSlugs = [...new Set((paper.tasks || []).map((t) => t.task.slug))];
+      const methodSlugs = [...new Set((paper.methods || []).map((m) => m.method.slug))];
+      const modelSlugs = [...new Set((paper.models || []).map((m) => m.model.slug))];
 
       if (taskSlugs.length === 0 && methodSlugs.length === 0 && modelSlugs.length === 0) {
         setRelatedLoading(false);
@@ -856,16 +856,16 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
                       </Link>
                     </span>
                   ))}
-                  {paper.authors.length > 3 && (
+                  {(paper.authors || []).length > 3 && (
                     <button
                       type="button"
                       onClick={() => setShowAllAuthors(!showAllAuthors)}
-                      className="ml-1 text-[13px] font-bold text-[#FF5A1F] bg-transparent border-none cursor-pointer p-0 hover:underline"
+                      className="text-[13px] font-semibold text-[#4A7AA0] hover:text-[#2c4e69] hover:underline"
                     >
-                      {showAllAuthors ? "Show less" : `+${paper.authors.length - 3} more`}
+                      {showAllAuthors ? "Show less" : `+${(paper.authors || []).length - 3} more`}
                     </button>
                   )}
-                  {showAllAuthors && paper.authors.slice(3).map((pa) => (
+                  {showAllAuthors && (paper.authors || []).slice(3).map((pa) => (
                     <span key={pa.author.id} className="inline-flex items-center">
                       <span className="mr-2 text-[#DCDCD7]">·</span>
                       <Link href={`/authors/${pa.author.slug}`} className="text-[14px] font-semibold text-[#444444] no-underline hover:text-[#FF5A1F] hover:underline decoration-2 underline-offset-4 transition-colors">
@@ -1103,9 +1103,9 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
               {/* TASKS */}
               <section className="flex flex-col gap-3">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">TASKS</h3>
-                {paper.tasks.length > 0 ? (
+                {(paper.tasks || []).length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {paper.tasks.map((t) => (
+                    {(paper.tasks || []).map((t) => (
                       <Link
                         key={t.task.id}
                         href={`/tasks/${t.task.slug}`}
@@ -1124,9 +1124,9 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
               {/* METHODS */}
               <section className="flex flex-col gap-3">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">METHODS</h3>
-                {paper.methods.length > 0 ? (
+                {(paper.methods || []).length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {paper.methods.map((m) => (
+                    {(paper.methods || []).map((m) => (
                       <Link
                         key={m.method.id}
                         href={`/methods/${m.method.slug}`}
@@ -1145,9 +1145,9 @@ export default function PaperDetail({ paper }: { paper: PaperDetailType }) {
               {/* MODELS */}
               <section className="flex flex-col gap-3">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8B8B8B] m-0">MODELS</h3>
-                {paper.models.length > 0 ? (
+                {(paper.models || []).length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {paper.models.map((m) => (
+                    {(paper.models || []).map((m) => (
                       <Link
                         key={m.model.id}
                         href={`/models/${m.model.slug}`}
