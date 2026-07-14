@@ -75,6 +75,11 @@ export const getModelBySlug = async (
       prisma.model.findUnique({
         where: { slug },
         include: {
+          _count: {
+            select: {
+              papers: true,
+            },
+          },
           papers: {
             take: 100,
             include: {
@@ -93,6 +98,7 @@ export const getModelBySlug = async (
         },
       }),
       prisma.paper.findMany({
+        take: 500,
         where: {
           models: {
             some: {
@@ -116,19 +122,56 @@ export const getModelBySlug = async (
               },
             },
           },
+          methods: {
+            select: {
+              method: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  category: true,
+                },
+              },
+            },
+          },
+          datasets: {
+            select: {
+              dataset: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+          rankings: {
+            select: {
+              rank: true,
+              benchmark: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
         },
       }),
     ]);
   });
 
   let baseModel: any = null;
+  let paperCount = 0;
   const allPapers: any[] = [];
-  const allTaskPapers: any[] = [];
+  const allModelPapers: any[] = [];
 
   for (const result of routingResult.results) {
-    const [model, taskPapers] = result;
+    const [model, modelPapers] = result;
 
     if (model) {
+      paperCount += model._count.papers;
       if (!baseModel) {
         const { papers, ...rest } = model;
         baseModel = { ...rest };
@@ -137,7 +180,7 @@ export const getModelBySlug = async (
       allPapers.push(...model.papers);
     }
 
-    allTaskPapers.push(...taskPapers);
+    allModelPapers.push(...modelPapers);
   }
 
   if (!baseModel) return null;
@@ -152,16 +195,19 @@ export const getModelBySlug = async (
     }
   }
 
-  const seenTaskPaperIds = new Set<string>();
+  const seenModelPaperIds = new Set<string>();
   const tasksBySlug = new Map<string, any>();
+  const methodsBySlug = new Map<string, any>();
+  const datasetsBySlug = new Map<string, any>();
+  const benchmarksBySlug = new Map<string, any>();
 
   let citationCount = 0;
   let githubStars = 0;
 
-  for (const paper of allTaskPapers) {
-    if (seenTaskPaperIds.has(paper.id)) continue;
+  for (const paper of allModelPapers) {
+    if (seenModelPaperIds.has(paper.id)) continue;
 
-    seenTaskPaperIds.add(paper.id);
+    seenModelPaperIds.add(paper.id);
 
     citationCount += paper.citationCount || 0;
     githubStars += paper.githubStars || 0;
@@ -171,6 +217,33 @@ export const getModelBySlug = async (
 
       if (!tasksBySlug.has(task.slug)) {
         tasksBySlug.set(task.slug, task);
+      }
+    }
+
+    for (const methodRelation of paper.methods) {
+      const method = methodRelation.method;
+
+      if (!methodsBySlug.has(method.slug)) {
+        methodsBySlug.set(method.slug, method);
+      }
+    }
+
+    for (const datasetRelation of paper.datasets) {
+      const dataset = datasetRelation.dataset;
+
+      if (!datasetsBySlug.has(dataset.slug)) {
+        datasetsBySlug.set(dataset.slug, dataset);
+      }
+    }
+
+    for (const ranking of paper.rankings) {
+      const benchmark = ranking.benchmark;
+
+      if (!benchmarksBySlug.has(benchmark.slug)) {
+        benchmarksBySlug.set(benchmark.slug, {
+          ...benchmark,
+          rank: ranking.rank,
+        });
       }
     }
   }
@@ -194,10 +267,13 @@ export const getModelBySlug = async (
     name: baseModel.name,
     slug: baseModel.slug,
     createdAt: baseModel.createdAt,
-    paperCount: seenTaskPaperIds.size,
+    paperCount,
     citationCount,
     githubStars,
     papers: dedupPapers.slice(0, 100),
     tasks: Array.from(tasksBySlug.values()),
+    methods: Array.from(methodsBySlug.values()),
+    datasets: Array.from(datasetsBySlug.values()),
+    benchmarks: Array.from(benchmarksBySlug.values()),
   };
 };
