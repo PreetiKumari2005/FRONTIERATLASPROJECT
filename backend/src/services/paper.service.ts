@@ -59,7 +59,9 @@ const paperSelect = {
     select: {
       author: {
         select: {
+          id: true,
           name: true,
+          slug: true,
         },
       },
     },
@@ -354,14 +356,12 @@ export const getPaperBySlug = async (
 ) => {
   const paper = await queryRouter.routeQuery(
     async (prisma: PrismaClient) => {
-      // Phase 1: fetch scalar fields only — fast index lookup, no JOIN explosion
       const paperData = await prisma.paper.findUnique({
         where: { slug },
         select: {
           id: true,
           slug: true,
           title: true,
-          shortTitle: true,
           abstract: true,
           tlDr: true,
           publicationDate: true,
@@ -380,97 +380,84 @@ export const getPaperBySlug = async (
           status: true,
           language: true,
           license: true,
-          createdAt: true,
           updatedAt: true,
           githubForks: true,
           githubStars: true,
           githubUrl: true,
           isOfficialCode: true,
-          hfUpvotes: true,
-          trendingScore: true,
           discoverySource: true,
         },
       });
 
       if (!paperData) return null;
 
-      // Phase 2: fetch all relations in parallel using the known paper_id
-      // Each is a simple index lookup — no JOIN cross-product
       const [authors, models, datasets, tasks, methods, conferences, rankings, sotaClaims] =
         await Promise.all([
-          prisma.paperAuthor.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              paper_id: true,
-              author_id: true,
-              author: { select: { id: true, name: true, slug: true } },
-            },
-          }),
-          prisma.paperModel.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              paper_id: true,
-              model_id: true,
-              model: { select: { id: true, name: true, slug: true } },
-            },
-          }),
-          prisma.paperDataset.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              paper_id: true,
-              dataset_id: true,
-              dataset: { select: { id: true, name: true, slug: true } },
-            },
-          }),
-          prisma.paperTask.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              paper_id: true,
-              task_id: true,
-              task: { select: { id: true, name: true, slug: true, color: true } },
-            },
-          }),
-          prisma.paperMethod.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              paper_id: true,
-              method_id: true,
-              method: { select: { id: true, name: true, slug: true } },
-            },
-          }),
-          prisma.paperConference.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              paper_id: true,
-              conference_id: true,
-              conference: { select: { id: true, name: true, slug: true } },
-            },
-          }),
-          prisma.ranking.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              id: true,
-              paper_id: true,
-              benchmark_id: true,
-              rank: true,
-              previous_rank: true,
-              updated_at: true,
-              benchmark: { select: { id: true, name: true, slug: true } },
-            },
-          }),
-          prisma.sotaClaim.findMany({
-            where: { paper_id: paperData.id },
-            select: {
-              id: true,
-              paper_id: true,
-              benchmark_id: true,
-              benchmark: { select: { id: true, name: true, slug: true } },
-            },
-          }),
+          prisma.paperAuthor
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { author: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.author)),
+          prisma.paperModel
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { model: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.model)),
+          prisma.paperDataset
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { dataset: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.dataset)),
+          prisma.paperTask
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { task: { select: { id: true, name: true, slug: true, color: true } } },
+            })
+            .then((rows) => rows.map((r) => r.task)),
+          prisma.paperMethod
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { method: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.method)),
+          prisma.paperConference
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: { conference: { select: { id: true, name: true, slug: true } } },
+            })
+            .then((rows) => rows.map((r) => r.conference)),
+          prisma.ranking
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: {
+                id: true,
+                rank: true,
+                previous_rank: true,
+                benchmark: { select: { id: true, name: true, slug: true } },
+              },
+            })
+            .then((rows) =>
+              rows.map((r) => ({ id: r.id, rank: r.rank, previous_rank: r.previous_rank, benchmark: r.benchmark })),
+            ),
+          prisma.sotaClaim
+            .findMany({
+              where: { paper_id: paperData.id },
+              select: {
+                id: true,
+                benchmark: { select: { id: true, name: true, slug: true } },
+              },
+            })
+            .then((rows) => rows.map((r) => ({ id: r.id, benchmark: r.benchmark }))),
         ]);
+
+      const thumbnailUrl = paperData.thumbnailUrl === "FAILED_404" ? null : paperData.thumbnailUrl;
 
       return {
         ...paperData,
+        thumbnailUrl,
         authors,
         models,
         datasets,
@@ -483,7 +470,7 @@ export const getPaperBySlug = async (
     },
   );
 
-  return paper ? exposeThumbnailUrl(paper) : null;
+  return paper;
 };
 
 export const getPaperById = async (

@@ -1,11 +1,16 @@
 import { fetchApi } from './api';
 
+export interface PaperAuthor {
+  name: string;
+  slug: string;
+}
+
 export interface Paper {
   id: string | number;
   slug: string;
   title: string;
   thumbnail: string;
-  authors: string;
+  authors: PaperAuthor[];
   date: string;
   description: string;
   sota: string;
@@ -56,6 +61,19 @@ function extractString(val: unknown): string {
     if (obj.label) return String(obj.label);
   }
   return String(val);
+}
+
+function mapAuthors(rawAuthors: unknown): PaperAuthor[] {
+  if (!Array.isArray(rawAuthors)) return [];
+  return rawAuthors.map((a: unknown) => {
+    if (typeof a === 'object' && a !== null) {
+      const obj = a as Record<string, unknown>;
+      const name = String(obj.name ?? (obj as any).author?.name ?? '');
+      const slug = String(obj.slug ?? (obj as any).author?.slug ?? '');
+      if (name && name !== 'undefined' && name !== 'null') return { name, slug };
+    }
+    return null;
+  }).filter(Boolean) as PaperAuthor[];
 }
 
 function mapBackendPaper(raw: Record<string, unknown>): Paper {
@@ -114,7 +132,7 @@ function mapBackendPaper(raw: Record<string, unknown>): Paper {
     slug: String(raw.slug || raw.id || ""),
     title: String(raw.title || "Untitled Paper"),
     thumbnail: finalThumbnail,
-    authors: displayAuthors,
+    authors: mapAuthors(raw.authors),
     date: formattedDate,
     description: String(raw.abstract || ""),
     sota: sotaString,
