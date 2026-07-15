@@ -1,6 +1,7 @@
 import { PrismaClient } from '../generated/prisma/client';
 import { QueryRouter } from '../routing/index.js';
 import { QueryIntent, QueryType } from '../routing/types.js';
+import { staticTaxonomy } from '../constants/taxonomy.js';
 
 type GetMethodsQuery = {
   sort?: 'name' | 'papers' | string;
@@ -129,53 +130,33 @@ export const getGroupedMethods = async (queryRouter: QueryRouter) => {
   const routingResult = await queryRouter.routeQuery(intent, async (prisma) => {
     return prisma.method.findMany({
       select: {
-        id: true,
-        name: true,
         slug: true,
-        category: true,
         _count: { select: { papers: true } },
-      },
-      orderBy: { name: 'asc' },
+      }
     });
   });
 
-  const allMethods: any[] = [];
-  const seenIds = new Set<string>();
-
+  const dbCounts: Record<string, number> = {};
   for (const result of routingResult.results) {
     for (const method of result) {
-      if (!seenIds.has(method.id)) {
-        seenIds.add(method.id);
-        allMethods.push({ ...method });
-      } else {
-        // sum paper counts from different shards
-        const existing = allMethods.find(m => m.id === method.id);
-        if (existing) {
-          existing._count.papers += method._count.papers;
-        }
-      }
+      if (!dbCounts[method.slug]) dbCounts[method.slug] = 0;
+      dbCounts[method.slug] += method._count.papers;
     }
   }
 
-  allMethods.sort((a, b) => a.name.localeCompare(b.name));
-
-  const grouped: Record<string, any[]> = {};
-  for (const method of allMethods) {
-    const category = method.category || 'Uncategorized';
-    if (!grouped[category]) grouped[category] = [];
-    grouped[category].push({
-      id: method.id,
-      name: method.name,
-      slug: method.slug,
-      paperCount: method._count.papers,
-    });
-  }
-
-  return Object.entries(grouped).map(([category, items]) => ({
-    id: category.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    name: category,
-    iconName: ICON_MAP[category] || "Box",
-    methods: items,
+  return staticTaxonomy.map(category => ({
+    id: category.id,
+    name: category.name,
+    iconName: category.iconName,
+    methods: category.methods.map(method => {
+      const slug = method.slug || method.id;
+      return {
+        id: method.id,
+        name: method.name,
+        slug: slug,
+        paperCount: dbCounts[slug] || 0,
+      };
+    })
   }));
 };
 
@@ -211,13 +192,7 @@ export const getMethodBySlug = async (queryRouter: QueryRouter, slug: string) =>
                 pdfUrl: true,
                 paperUrl: true,
                 githubUrl: true,
-                authors: {
-                  select: {
-                    author: {
-                      select: { name: true },
-                    },
-                  },
-                },
+                authors: true,
                 sotaClaims: {
                   select: {
                     benchmark: { select: { name: true, slug: true } }
@@ -247,7 +222,31 @@ export const getMethodBySlug = async (queryRouter: QueryRouter, slug: string) =>
     }
   }
 
-  if (!baseMethod) return null;
+  if (!baseMethod || totalPaperCount === 0 || allPapers.length === 0) {
+    let staticMethod = null;
+    let staticCategory = null;
+    for (const cat of staticTaxonomy) {
+      const m = cat.methods.find(m => (m.slug || m.id) === slug);
+      if (m) {
+        staticMethod = m;
+        staticCategory = cat;
+        break;
+      }
+    }
+    
+    if (staticMethod && staticCategory) {
+      return {
+        id: staticMethod.id,
+        name: staticMethod.name,
+        slug: staticMethod.slug || staticMethod.id,
+        category: staticCategory.name,
+        categoryName: staticCategory.name,
+        paperCount: 0,
+        papers: [],
+      };
+    }
+    return null;
+  }
 
   // Deduplicate papers across shards
   const seenPaperIds = new Set<string>();
@@ -268,7 +267,7 @@ export const getMethodBySlug = async (queryRouter: QueryRouter, slug: string) =>
     paperCount: totalPaperCount,
     papers: topPapers.map(({ paper }) => ({
       ...paper,
-      authors: paper.authors.map((a: any) => a.author),
+      authors: paper.authors && typeof paper.authors === 'string' ? paper.authors.split(',').map((name: string) => { const t = name.trim(); return { id: t, name: t, slug: t.toLowerCase().replace(/[^a-z0-9]+/g, '-') }; }) : [],
       sotaClaims: paper.sotaClaims?.map((c: any) => c.benchmark) || [],
     })),
   };

@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import * as React from "react";
 import Link from "next/link";
 import { MethodsHero } from "@/components/MethodsHero";
@@ -371,9 +373,25 @@ const staticTaxonomy = [
   }
 ];
 
-import { TaxonomyView } from "./TaxonomyView";
+export default async function MethodsPage() {
+  let taxonomy = staticTaxonomy;
 
-export default function MethodsPage() {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://frontieratlas-backend.morningsignal-india.workers.dev';
+    const res = await fetch(`${apiUrl}/api/v1/methods/taxonomy`, { 
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(5000) // 5 second timeout so builds never hang
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.data && Array.isArray(data.data)) {
+        taxonomy = data.data;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch methods taxonomy", error);
+  }
+
   return (
     <div className={`${atlasUiFont.className} min-h-screen bg-[#F8F7F2] text-[#111111] tracking-normal`}>
       <Navbar />
@@ -387,7 +405,31 @@ export default function MethodsPage() {
           <span className="text-[#555555] font-medium">Methods</span>
         </nav>
 
-        <TaxonomyView initialTaxonomy={staticTaxonomy} />
+        <MethodsHero taxonomy={taxonomy} />
+        
+        <CategoryPillBar categories={taxonomy} />
+        
+        <main className="flex flex-col mt-4 gap-4">
+          <h2 className="sr-only">Browse Methods by Category</h2>
+          {taxonomy.length > 0 ? taxonomy.map((category: any) => (
+            <CategoryRow key={category.id} category={category} />
+          )) : (
+            <div className="flex flex-col items-center justify-center py-24 px-4 text-center animate-fade-in bg-white rounded-3xl border border-[#E5E5E0]">
+              <div className="w-20 h-20 bg-[#F8F7F2] rounded-full flex items-center justify-center mb-6 border border-[#E5E5E0] shadow-sm">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8B8B8B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+              </div>
+              <h3 className="text-[18px] font-bold text-[#111111] mb-2 tracking-tight">No methods found</h3>
+              <p className="text-[14px] text-[#666666] max-w-[300px] leading-relaxed">
+                We couldn't find any methods matching your criteria. Please adjust your filters and try again.
+              </p>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
