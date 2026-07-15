@@ -26,6 +26,20 @@ const nextConfig = {
     ],
   },
 
+  // 🎯 FIX: Optimize Webpack compiler memory behavior during hot-reloads
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Prevents Webpack from creating massive binary cache allocations in RAM
+      config.cache = false;
+    }
+    return config;
+  },
+
+  // 🎯 FIX: Forces Next.js internal worker processes to optimize their memory ceiling limits
+  experimental: {
+    memoryBasedWorkersCount: true,
+  },
+
   async rewrites() {
     if (process.env.NODE_ENV !== "development") {
       return [];

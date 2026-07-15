@@ -24,6 +24,7 @@ export default function Navbar({
   const isTasksActive = pathname.startsWith("/tasks");
   const isBenchmarksActive = pathname.startsWith("/benchmarks");
   const isModelsActive = pathname.startsWith("/models");
+  const isLeaderboardActive = pathname.startsWith("/leaderboard"); // <-- Added tracking active state
 
   const isHomePage = pathname === "/";
   const isCategoryPage = pathname.startsWith("/category/");
@@ -83,7 +84,6 @@ export default function Navbar({
           <Link href="/" className="flex items-center justify-center xl:justify-start cursor-pointer absolute left-1/2 -translate-x-1/2 xl:relative xl:left-auto xl:-translate-x-0 w-[160px] sm:w-[200px] xl:w-[240px] h-12 xl:h-14">
             <Image src="/logo.png" alt="Frontier Atlas" fill className="object-contain object-center xl:object-left" sizes="(max-width: 1280px) 200px, 240px" />
           </Link>
-
         </div>
 
         {/* Center — Search Bar (Desktop) */}
@@ -148,6 +148,18 @@ export default function Navbar({
             }`}
           >
             Models
+          </Link>
+          {/* Added Leaderboard Navigation Link Option */}
+          <Link
+            href="/leaderboard"
+            data-text="Leaderboard"
+            className={`text-[13px] transition-colors no-underline before:content-[attr(data-text)] before:block before:font-bold before:h-0 before:overflow-hidden before:invisible before:select-none text-center flex flex-col justify-center ${
+              isLeaderboardActive
+                ? "text-[#F55036] font-bold"
+                : "text-[#555555] font-medium hover:text-[#F55036]"
+            }`}
+          >
+            Leaderboard
           </Link>
         </div>
 
