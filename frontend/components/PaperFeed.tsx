@@ -1181,8 +1181,9 @@ const Metric = memo(
           >
             {value}
           </span>
+          {/* 🎯 FIXED: Stripped duplicate font property rule string syntax */}
           <span
-            className={`text-[9px] font-semibold text-[#8B8B8B] uppercase tracking-[0.06em] font-medium leading-none mt-1 ${isInteractive ? "group-hover/metric:text-[#F55036]/80 transition-colors" : ""}`}
+            className={`text-[9px] font-semibold text-[#8B8B8B] uppercase tracking-[0.06em] leading-none mt-1 ${isInteractive ? "group-hover/metric:text-[#F55036]/80 transition-colors" : ""}`}
           >
             {label}
           </span>
@@ -1217,7 +1218,7 @@ export const PaperCard = memo(({ paper }: { paper: Paper }) => {
             {paper.title}
           </h3>
 
-          {/* Authors + Date + Citations — 🎯 FIXED: Resolved code duplication and overlapping elements */}
+          {/* Authors + Date + Citations */}
           <div className="flex flex-wrap items-center gap-x-2 text-[13px] text-[#666666] mb-3">
             {visibleAuthors.length > 0 ? (
               visibleAuthors.map((a, i) => (
@@ -1690,4 +1691,3 @@ export default function PaperList({
     </Profiler>
   );
 }
-
