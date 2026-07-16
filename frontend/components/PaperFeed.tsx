@@ -344,7 +344,7 @@ const Metric = memo(
 Metric.displayName = "Metric";
 
 export const PaperCard = memo(({ paper }: { paper: Paper }) => {
-  const router = useRouter();
+  //const router = useRouter();
   const upvotesNum = parseFloat(paper.upvotes) || 0;
 
   const safeAuthors = paper.authors || [];
@@ -369,34 +369,25 @@ export const PaperCard = memo(({ paper }: { paper: Paper }) => {
           {/* Authors + Date + Citations */}
 <div className="flex flex-wrap items-center gap-x-2 text-[13px] text-[#666666] mb-3">
 
-  {visibleAuthors.length > 0 ? (
-    visibleAuthors.map((a, i) => (
-      <span key={a.slug || i}>
-  {i > 0 && <span>, </span>}
-  <span
-    role="link"
-    tabIndex={0}
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation(); // Stops the outer PaperCard link from opening
-      router.push(`/authors/${a.slug}`);
-    }}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        e.stopPropagation();
-        router.push(`/authors/${a.slug}`);
-      }
-    }}
-    className="cursor-pointer hover:text-[#F55036] hover:underline"
-  >
-    {a.name}
-  </span>
-</span>
-    ))
-  ) : (
-    <span>Unknown Author</span>
-  )}
+  {/* 🎯 REPLACE YOUR VISIBLE AUTHORS LOOP WITH THIS CLEAN SETUP */}
+{visibleAuthors.length > 0 ? (
+  visibleAuthors.map((a, i) => (
+    <span key={a.slug || i}>
+      {i > 0 && <span>, </span>}
+      <Link
+        href={`/authors/${a.slug}`}
+        onClick={(e) => {
+          e.stopPropagation(); // 🧠 Prevents the main card link from stealing the click!
+        }}
+        className="cursor-pointer hover:text-[#F55036] hover:underline z-20 relative"
+      >
+        {a.name}
+      </Link>
+    </span>
+  ))
+) : (
+  <span>Unknown Author</span>
+)}
 
   {remaining > 0 && <span> et al.</span>}
 
