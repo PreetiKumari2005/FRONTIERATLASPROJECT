@@ -8,7 +8,7 @@ import {
 
 type AuthVariables = {
   prisma: any;
-  userId: string;
+  user_id: string;
 };
 
 export const authMiddleware: MiddlewareHandler<{
@@ -49,7 +49,7 @@ export const authMiddleware: MiddlewareHandler<{
     const payload =
       await verifyAccessToken(accessToken);
 
-    c.set("userId", payload.userId);
+    c.set("user_id", payload.user_id);
 
     await next();
 

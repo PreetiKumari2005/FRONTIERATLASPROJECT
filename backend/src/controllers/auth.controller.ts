@@ -27,7 +27,7 @@ import {
 type AuthContext = Context<{
   Variables: {
     prisma: any;
-    userId: string;
+    user_id: string;
   };
 }>;
 
@@ -274,7 +274,7 @@ export const me = async (
     const user =
       await getCurrentUser(
         c.var.prisma,
-        c.get("userId")
+        c.get("user_id")
       );
 
     return c.json({

@@ -1,7 +1,7 @@
 import { sign, verify } from "hono/jwt";
 
 export type JwtPayload = {
-  userId: string;
+  user_id: string;
 };
 
 export const ACCESS_TOKEN_COOKIE = "accessToken";
@@ -30,23 +30,23 @@ const signJwt = async (
 
 const verifyJwt = async (token: string, secret: string): Promise<JwtPayload> => {
   const payload = await verify(token, secret, "HS256");
-  if (typeof payload.userId !== "string") {
+  if (typeof payload.user_id !== "string") {
     throw new Error("Invalid token payload");
   }
-  return { userId: payload.userId };
+  return { user_id: payload.user_id };
 };
 
-export const generateAccessToken = async (userId: string) => {
+export const generateAccessToken = async (user_id: string) => {
   return await signJwt(
-    { userId },
+    { user_id },
     getEnv("JWT_ACCESS_SECRET"),
     ACCESS_TOKEN_MAX_AGE_SECONDS
   );
 };
 
-export const generateRefreshToken = async (userId: string) => {
+export const generateRefreshToken = async (user_id: string) => {
   return await signJwt(
-    { userId },
+    { user_id },
     getEnv("JWT_REFRESH_SECRET"),
     REFRESH_TOKEN_MAX_AGE_SECONDS
   );

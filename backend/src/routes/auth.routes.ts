@@ -12,7 +12,7 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 
 type AuthVariables = {
   prisma: any;
-  userId: string;
+  user_id: string;
 };
 
 const auth = new Hono<{

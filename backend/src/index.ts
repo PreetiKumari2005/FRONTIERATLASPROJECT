@@ -29,7 +29,7 @@ type Env = {
     prisma: PrismaClient;
     databaseManager: DatabaseManager;
     queryRouter: QueryRouter;
-    userId: string;
+    user_id: string;
   };
 };
 
