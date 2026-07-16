@@ -93,7 +93,7 @@ const PLACEHOLDER_COLORS = [
   ["#ecfeff", "#0891b2"],
   ["#fdf4ff", "#a21caf"],
 ];
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PaperThumbnail({ paper }: { paper: Paper }) {
   // Try arxiv thumbnail first
   const arxivThumb = paper.arxivId

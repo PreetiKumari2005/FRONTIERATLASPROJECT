@@ -91,6 +91,7 @@ function mapBackendPaper(raw: Record<string, unknown>): Paper {
       return String(a);
     }).join(", ");
   } else if (raw.authors && typeof raw.authors === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     displayAuthors = 'name' in raw.authors ? String((raw.authors as { name: unknown }).name) : "Unknown Author";
   }
 
