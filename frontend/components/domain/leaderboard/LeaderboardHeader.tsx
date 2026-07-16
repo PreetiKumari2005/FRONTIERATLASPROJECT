@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 
 export type MainCategory = 'agent' | 'chat' | 'code' | 'image' | 'video';
 
@@ -22,8 +22,7 @@ export const LeaderboardHeader: React.FC<HeaderProps> = ({
   onCategoryChange,
   onlyNavbar = false
 }) => {
-  const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
-  const [activeTab, setActiveTab] = useState<MainCategory>('chat');
+  const [viewType, setViewType] = React.useState<'grid' | 'list'>('grid');
 
   const subMenus: Record<MainCategory, SubCategoryItem[]> = {
     agent: [
@@ -162,8 +161,12 @@ export const LeaderboardHeader: React.FC<HeaderProps> = ({
     ]
   };
 
+  // 🔎 DYNAMIC DETECTOR: Derived state tracking which main tab is active based on the current child ID select path
+  const activeTab = (Object.keys(subMenus) as MainCategory[]).find((key) =>
+    subMenus[key].some((item) => item.id.toLowerCase() === currentCategory.toLowerCase())
+  ) || 'chat';
+
   const handleTabSelection = (tab: MainCategory) => {
-    setActiveTab(tab);
     if (subMenus[tab] && subMenus[tab].length > 0) {
       onCategoryChange(subMenus[tab][0].id);
     }

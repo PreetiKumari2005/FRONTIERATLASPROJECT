@@ -1,4 +1,4 @@
-import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaClient } from "../generated/prisma/client";
 import { DatabaseManager } from "../database/DatabaseManager.js";
 import { QueryIntent } from "./types.js";
 
