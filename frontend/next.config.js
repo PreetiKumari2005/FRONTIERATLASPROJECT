@@ -57,14 +57,14 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // THE FIX: Tells Next.js to let the build finish even if there are unused variables
   eslint: {
+    // 🎯 This forces Vercel to ignore unused variables during the build phase
     ignoreDuringBuilds: true,
   },
-  // If you also have TypeScript strict type warnings blocking you, add this too:
   typescript: {
+    // 🎯 This prevents strict TS compiler errors from crashing Vercel
     ignoreBuildErrors: true,
   }
 };
 
-export default nextConfig;
+module.exports = nextConfig;
