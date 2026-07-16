@@ -1,4 +1,4 @@
- import { fetchApi } from './api';
+import { fetchApi } from './api';
 
 export interface PaperAuthor {
   name: string;
@@ -146,7 +146,11 @@ export async function getPapers(params: GetPapersParams = {}): Promise<GetPapers
     );
     
     const mapStart = performance.now();
-    const mappedPapers = response.data.papers.map(mapBackendPaper);
+    
+    // 🎯 Defensive Layer: Always fallback to an empty array if data or papers structure is absent
+    const rawPapers = response?.data?.papers || [];
+    const mappedPapers = rawPapers.map(mapBackendPaper);
+    
     const mapDuration = performance.now() - mapStart;
     const totalDuration = performance.now() - start;
     
@@ -154,13 +158,19 @@ export async function getPapers(params: GetPapersParams = {}): Promise<GetPapers
 
     return {
       papers: mappedPapers,
-      total: response.data.total,
-      page: response.data.page,
-      hasMore: response.data.hasMore,
+      total: response?.data?.total || 0,
+      page: response?.data?.page || 1,
+      hasMore: response?.data?.hasMore || false,
     };
   } catch (error) {
     console.error('Failed to fetch research papers:', error);
-    throw error;
+    // Return empty dataset gracefully to prevent build-time prerendering crashes
+    return {
+      papers: [],
+      total: 0,
+      page: 1,
+      hasMore: false,
+    };
   }
 }
 
@@ -169,7 +179,8 @@ export async function searchPapers(query: string): Promise<Paper[]> {
   
   try {
     const response = await fetchApi<PapersResponse>(`/api/v1/research-papers?search=${encodeURIComponent(query)}`);
-    return response.data.papers.map(mapBackendPaper);
+    const rawPapers = response?.data?.papers || [];
+    return rawPapers.map(mapBackendPaper);
   } catch (error) {
     console.warn('Backend search unavailable, falling back to client-side filtering', error);
     try {
@@ -186,7 +197,7 @@ export async function searchPapers(query: string): Promise<Paper[]> {
       });
     } catch (fallbackError) {
       console.error('Fallback search failed:', fallbackError);
-      throw fallbackError;
+      return [];
     }
   }
 }
