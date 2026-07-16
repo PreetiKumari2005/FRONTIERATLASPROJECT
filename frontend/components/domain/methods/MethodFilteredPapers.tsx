@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/link";
+
 import Image from "next/image";
 import { TrendingUp, Clock, Star } from "lucide-react";
 import { PaperCard } from "../../PaperFeed";
