@@ -1,4 +1,4 @@
-import { fetchApi } from './api';
+// import { fetchApi } from './api';
 
 export interface PaperAuthor {
   name: string;
@@ -77,24 +77,6 @@ function mapAuthors(rawAuthors: unknown): PaperAuthor[] {
 }
 
 function mapBackendPaper(raw: Record<string, unknown>): Paper {
-  let displayAuthors = "Unknown Authors";
-  if (typeof raw.authors === 'string') {
-    displayAuthors = raw.authors;
-  } else if (Array.isArray(raw.authors)) {
-    displayAuthors = raw.authors.map((a: unknown) => {
-      if (typeof a === 'object' && a !== null) {
-        if ('name' in a) return String((a as { name: string }).name);
-        if ('author' in a && typeof (a as { author: unknown }).author === 'object' && (a as { author: { name: string } }).author !== null && 'name' in (a as { author: { name: string } }).author) {
-          return String((a as { author: { name: string } }).author.name);
-        }
-      }
-      return String(a);
-    }).join(", ");
-  } else if (raw.authors && typeof raw.authors === 'object') {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    displayAuthors = 'name' in raw.authors ? String((raw.authors as { name: unknown }).name) : "Unknown Author";
-  }
-
   let formattedDate = "Unknown Date";
   if (raw.publicationDate) {
     formattedDate = new Date(String(raw.publicationDate)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -117,15 +99,12 @@ function mapBackendPaper(raw: Record<string, unknown>): Paper {
   let finalThumbnail = "";
 
   if (rawThumb && rawThumb !== "FAILED_404") {
-    // If it's a huge base64 image from the DB, format it properly
     if (rawThumb.startsWith("/9j/") || rawThumb.startsWith("iVBORw0KGgo")) {
       finalThumbnail = `data:image/jpeg;base64,${rawThumb}`;
     } 
-    // If it's a valid local path, http URL, or ALREADY a formatted data URL, keep it
     else if (rawThumb.startsWith("/") || rawThumb.startsWith("http") || rawThumb.startsWith("data:")) {
       finalThumbnail = rawThumb;
     }
-    // Otherwise, it's a corrupted short string (e.g., 'z5HwCV1J...'). We ignore it to prevent 404s.
   }
 
   return {
@@ -189,12 +168,10 @@ export async function searchPapers(query: string): Promise<Paper[]> {
   if (!query.trim()) return [];
   
   try {
-    // Try backend search first
     const response = await fetchApi<PapersResponse>(`/api/v1/research-papers?search=${encodeURIComponent(query)}`);
     return response.data.papers.map(mapBackendPaper);
   } catch (error) {
     console.warn('Backend search unavailable, falling back to client-side filtering', error);
-    // Fallback: fetch all and filter locally
     try {
       const result = await getPapers({ limit: 100 });
       const lowerQuery = query.toLowerCase();
