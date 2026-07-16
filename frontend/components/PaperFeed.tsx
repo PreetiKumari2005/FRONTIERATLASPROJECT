@@ -344,6 +344,7 @@ const Metric = memo(
 Metric.displayName = "Metric";
 
 export const PaperCard = memo(({ paper }: { paper: Paper }) => {
+  const router = useRouter();
   const upvotesNum = parseFloat(paper.upvotes) || 0;
 
   const safeAuthors = paper.authors || [];
@@ -868,3 +869,4 @@ export default function PaperList({
     </Profiler>
   );
 }
+
